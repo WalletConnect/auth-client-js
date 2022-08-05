@@ -1,0 +1,36 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+lerna-debug.log
+*.lerna_backup
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+# Dependency directories
+**/node_modules
+jspm_packages
+# Optional npm cache directory
+.npm
+.eslintcache
+.node_repl_history
+*.tgz
+**/dist
+**/build
+.DS_Store
+.makeFlags*
+.env
+zip
+.idea
+.rts2_cache_*
+.nyc_output
+tsconfig.tsbuildinfo
+test.db
+test.db-journal
+setup
+result*
+ops/grafana/grafana.ini
+.rollup.cache

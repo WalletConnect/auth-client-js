@@ -1,0 +1,62 @@
+{
+  "name": "@walletconnect/auth-client",
+  "description": "WalletConnect Auth Client",
+  "private": true,
+  "keywords": [
+    "wallet",
+    "walletconnect",
+    "ethereum",
+    "jsonrpc",
+    "mobile",
+    "qrcode",
+    "web3",
+    "crypto",
+    "cryptocurrency",
+    "dapp"
+  ],
+  "author": "WalletConnect, Inc. <walletconnect.com>",
+  "homepage": "https://github.com/walletconnect/auth-client-js/",
+  "license": "Apache-2.0",
+  "workspaces": [
+    "packages/auth-client"
+  ],
+  "scripts": {
+    "clean": "npm run clean --workspaces",
+    "lint": "npm run lint --workspaces",
+    "prettier": "npm run prettier --workspaces",
+    "build": "npm run clean --workspaces; npm run build --workspaces",
+    "test": "npm run test --workspaces"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/walletconnect/auth-client-js.git"
+  },
+  "bugs": {
+    "url": "https://github.com/walletconnect/auth-client-js/issues"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "22.0.1",
+    "@rollup/plugin-node-resolve": "13.3.0",
+    "@types/node": "18.6.1",
+    "@types/pino": "6.3.3",
+    "@types/sinon": "10.0.13",
+    "@typescript-eslint/eslint-plugin": "5.30.7",
+    "@typescript-eslint/parser": "5.30.7",
+    "eslint": "8.20.0",
+    "eslint-config-prettier": "8.5.0",
+    "eslint-config-standard": "17.0.0",
+    "eslint-plugin-import": "2.26.0",
+    "eslint-plugin-node": "11.1.0",
+    "eslint-plugin-prettier": "4.2.1",
+    "eslint-plugin-promise": "6.0.0",
+    "eslint-plugin-react": "7.30.1",
+    "eslint-plugin-standard": "5.0.0",
+    "prettier": "2.7.1",
+    "rollup": "2.77.0",
+    "rollup-plugin-esbuild": "4.9.1",
+    "rollup-plugin-polyfill-node": "0.10.2",
+    "sinon": "14.0.0",
+    "typescript": "4.7.4",
+    "vitest": "0.19.0"
+  }
+}
