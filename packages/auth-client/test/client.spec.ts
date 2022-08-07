@@ -8,7 +8,7 @@ describe("AuthClient", () => {
 
   beforeAll(async () => {
     client = await AuthClient.init({
-      logger: "error",
+      logger: "debug",
       relayUrl: "ws://0.0.0.0:5555",
       projectId: undefined,
       storageOptions: {
@@ -16,17 +16,17 @@ describe("AuthClient", () => {
       },
     });
 
-    peer = await AuthClient.init({
-      logger: "error",
-      relayUrl: "ws://0.0.0.0:5555",
-      projectId: undefined,
-      storageOptions: {
-        database: ":memory:",
-      },
-    });
+    // peer = await AuthClient.init({
+    //   logger: "debug",
+    //   relayUrl: "ws://0.0.0.0:5555",
+    //   projectId: undefined,
+    //   storageOptions: {
+    //     database: ":memory:",
+    //   },
+    // });
   });
 
-  it("can be instantiated", async () => {
+  it("can be instantiated", () => {
     expect(client instanceof AuthClient).toBe(true);
     expect(client.core).toBeDefined();
     expect(client.events).toBeDefined();

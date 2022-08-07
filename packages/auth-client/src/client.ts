@@ -4,23 +4,26 @@ import {
   getDefaultLoggerOptions,
   getLoggerContext,
 } from "@walletconnect/logger";
-import { ISignClient, ISignClientEvents } from "@walletconnect/types";
 import { EventEmitter } from "events";
 import pino from "pino";
-// import { SIGN_CLIENT_DEFAULT, SIGN_CLIENT_PROTOCOL, SIGN_CLIENT_VERSION } from "./constants";
-// import { Engine, Expirer, JsonRpcHistory, Pairing, Proposal, Session } from "./controllers";
 
-export class AuthClient {
+import { IAuthClient } from "./types";
+import { JsonRpcHistory, AuthEngine } from "./controllers";
+import { AUTH_CLIENT_PROTOCOL, AUTH_CLIENT_VERSION } from "./constants";
+
+export class AuthClient extends IAuthClient {
+  public readonly protocol = AUTH_CLIENT_PROTOCOL;
+  public readonly version = AUTH_CLIENT_VERSION;
   public readonly name = "authClient";
 
-  public core: ISignClient["core"];
-  public logger: ISignClient["logger"];
-  public events: ISignClient["events"] = new EventEmitter();
-  // public engine: ISignClient["engine"];
+  public core: IAuthClient["core"];
+  public logger: IAuthClient["logger"];
+  public events: IAuthClient["events"] = new EventEmitter();
+  public engine: IAuthClient["engine"];
   // public pairing: ISignClient["pairing"];
   // public session: ISignClient["session"];
   // public proposal: ISignClient["proposal"];
-  // public history: ISignClient["history"];
+  public history: IAuthClient["history"];
   // public expirer: ISignClient["expirer"];
 
   static async init(opts?: Record<string, any>) {
@@ -31,8 +34,7 @@ export class AuthClient {
   }
 
   constructor(opts?: Record<string, any>) {
-    // FIXME: re-instate super after base abstract class is defined.
-    // super(opts);
+    super(opts);
 
     const logger =
       typeof opts?.logger !== "undefined" && typeof opts?.logger !== "string"
@@ -48,9 +50,9 @@ export class AuthClient {
     // TODO:
     // this.pairing = new Pairing(this.core, this.logger);
     // this.proposal = new Proposal(this.core, this.logger);
-    // this.history = new JsonRpcHistory(this.core, this.logger);
+    this.history = new JsonRpcHistory(this.core, this.logger);
     // this.expirer = new Expirer(this.core, this.logger);
-    // this.engine = new Engine(this);
+    this.engine = new AuthEngine(this);
   }
 
   get context() {
@@ -59,40 +61,75 @@ export class AuthClient {
 
   // ---------- Events ----------------------------------------------- //
 
-  // TODO: update event handler typings to not be from ISignClient
+  public emit: IAuthClient["emit"] = (name, listener) => {
+    return this.events.emit(name, listener);
+  };
 
-  public on: ISignClientEvents["on"] = (name, listener) => {
+  public on: IAuthClient["on"] = (name, listener) => {
     return this.events.on(name, listener);
   };
 
-  public once: ISignClientEvents["once"] = (name, listener) => {
+  public once: IAuthClient["once"] = (name, listener) => {
     return this.events.once(name, listener);
   };
 
-  public off: ISignClientEvents["off"] = (name, listener) => {
+  public off: IAuthClient["off"] = (name, listener) => {
     return this.events.off(name, listener);
   };
 
-  public removeListener: ISignClientEvents["removeListener"] = (name, listener) => {
+  public removeListener: IAuthClient["removeListener"] = (name, listener) => {
     return this.events.removeListener(name, listener);
   };
 
   // ---------- Engine ----------------------------------------------- //
 
   // for responder to pair a pairing created by a proposer
-  // public pair(params: { uri: string }): Promise<Sequence>;
+  public pair: IAuthClient["pair"] = async (params) => {
+    try {
+      return await this.engine.pair(params);
+    } catch (error: any) {
+      this.logger.error(error.message);
+      throw error;
+    }
+  };
 
-  // // request wallet authentication
-  // public request(params: RequestParams): Promise<{ uri; id }>;
+  // request wallet authentication
+  public request: IAuthClient["request"] = async (params) => {
+    try {
+      return await this.engine.request(params);
+    } catch (error: any) {
+      this.logger.error(error.message);
+      throw error;
+    }
+  };
 
-  // // respond wallet authentication
-  // public respond(params: RespondParams): Promise<boolean>;
+  // respond wallet authentication
+  public respond: IAuthClient["respond"] = async (params) => {
+    try {
+      return await this.engine.respond(params);
+    } catch (error: any) {
+      this.logger.error(error.message);
+      throw error;
+    }
+  };
 
-  // // query all pending requests
-  // public getPendingRequests(): Promise<Record<number, PendingRequest>>;
+  public getPendingRequests: IAuthClient["getPendingRequests"] = async () => {
+    try {
+      return await this.engine.getPendingRequests();
+    } catch (error: any) {
+      this.logger.error(error.message);
+      throw error;
+    }
+  };
 
-  // // query cached request matching id
-  // public getRequest(params: { id: number }): Promise<Cacao>;
+  public getRequest: IAuthClient["getRequest"] = async (params) => {
+    try {
+      return await this.engine.getRequest(params);
+    } catch (error: any) {
+      this.logger.error(error.message);
+      throw error;
+    }
+  };
 
   // ---------- Private ----------------------------------------------- //
 
@@ -100,12 +137,11 @@ export class AuthClient {
     this.logger.trace(`Initialized`);
     try {
       await this.core.start();
-      // TODO:
       // await this.pairing.init();
       // await this.proposal.init();
-      // await this.history.init();
+      await this.history.init();
       // await this.expirer.init();
-      // await this.engine.init();
+      await this.engine.init();
       this.logger.info(`AuthClient Initialization Success`);
     } catch (error: any) {
       this.logger.info(`AuthClient Initialization Failure`);
