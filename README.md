@@ -7,8 +7,11 @@
 - `prettier` - Runs [prettier](https://prettier.io/) checks
 - `build` - Builds all packages
 - `test` - Tests all packages
-- `check` - Shorthand to run lint, build and test commands
-- `reset` - Shorthand to run clean anc check commands
+
+## Unit Tests
+
+- The unit tests depend on a relay server being run locally on port `5555`.
+- Before running tests, pull and start ts-relay server ([separate repo](https://github.com/WalletConnect/ts-relay)) `PORT=5555 npm run start` in a separate terminal window
 
 ## License
 
