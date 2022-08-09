@@ -1,15 +1,17 @@
-import { Core } from "@walletconnect/core";
+import {Core} from "@walletconnect/core";
 import {
   generateChildLogger,
   getDefaultLoggerOptions,
   getLoggerContext,
 } from "@walletconnect/logger";
-import { EventEmitter } from "events";
+import {EventEmitter} from "events";
 import pino from "pino";
 
-import { IAuthClient } from "./types";
-import { JsonRpcHistory, AuthEngine } from "./controllers";
-import { AUTH_CLIENT_PROTOCOL, AUTH_CLIENT_VERSION } from "./constants";
+import {IAuthClient} from "./types";
+import {JsonRpcHistory, AuthEngine} from "./controllers";
+import {AUTH_CLIENT_PROTOCOL, AUTH_CLIENT_VERSION} from "./constants";
+import {Pairing} from "./controllers/pairing";
+import {Expirer} from "./controllers/expirer";
 
 export class AuthClient extends IAuthClient {
   public readonly protocol = AUTH_CLIENT_PROTOCOL;
@@ -20,11 +22,9 @@ export class AuthClient extends IAuthClient {
   public logger: IAuthClient["logger"];
   public events: IAuthClient["events"] = new EventEmitter();
   public engine: IAuthClient["engine"];
-  // public pairing: ISignClient["pairing"];
-  // public session: ISignClient["session"];
-  // public proposal: ISignClient["proposal"];
-  public history: IAuthClient["history"];
-  // public expirer: ISignClient["expirer"];
+  public pairing: IAuthClient["pairing"];
+  public expirer: IAuthClient["expirer"];
+  // public history: IAuthClient["history"];
 
   static async init(opts?: Record<string, any>) {
     const client = new AuthClient(opts);
@@ -40,19 +40,19 @@ export class AuthClient extends IAuthClient {
       typeof opts?.logger !== "undefined" && typeof opts?.logger !== "string"
         ? opts.logger
         : pino(
-            getDefaultLoggerOptions({
-              level: opts?.logger || "error",
-            }),
-          );
+          getDefaultLoggerOptions({
+            level: opts?.logger || "error",
+          }),
+        );
 
     this.core = opts?.core || new Core(opts);
     this.logger = generateChildLogger(logger, this.name);
     // TODO:
-    // this.pairing = new Pairing(this.core, this.logger);
-    // this.proposal = new Proposal(this.core, this.logger);
-    this.history = new JsonRpcHistory(this.core, this.logger);
-    // this.expirer = new Expirer(this.core, this.logger);
+    this.pairing = new Pairing(this.core, this.logger);
+    this.expirer = new Expirer(this.core, this.logger);
     this.engine = new AuthEngine(this);
+    // this.proposal = new Proposal(this.core, this.logger);
+    // this.history = new JsonRpcHistory(this.core, this.logger);
   }
 
   get context() {
