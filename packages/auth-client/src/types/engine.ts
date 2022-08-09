@@ -1,4 +1,4 @@
-import {RelayerTypes, CryptoTypes} from "@walletconnect/types";
+import { RelayerTypes, CryptoTypes } from "@walletconnect/types";
 
 import {
   ErrorResponse,
@@ -7,8 +7,8 @@ import {
   JsonRpcResponse,
   JsonRpcResult,
 } from "@walletconnect/jsonrpc-utils";
-import {IAuthClient} from "./client";
-import {JsonRpcTypes} from "./jsonrpc";
+import { IAuthClient } from "./client";
+import { JsonRpcTypes } from "./jsonrpc";
 
 export interface RpcOpts {
   req: RelayerTypes.PublishOptions;
@@ -28,15 +28,15 @@ export abstract class IAuthEngine {
 
   public abstract init(): Promise<void>;
 
-  public abstract pair(params: {uri: string}): Promise</*Sequence*/ any>;
+  public abstract pair(params: { uri: string }): Promise</*Sequence*/ any>;
 
-  public abstract request(params: /*RequestParams*/ any): Promise<{uri: string; id: number}>;
+  public abstract request(params: /*RequestParams*/ any): Promise<{ uri: string; id: number }>;
 
   public abstract respond(params: /*RespondParams*/ any): Promise<void>;
 
   public abstract getPendingRequests(): Promise<Record<number, /*PendingRequest*/ any>>;
 
-  public abstract getRequest(params: {id: number}): Promise</*Cacao*/ any>;
+  public abstract getRequest(params: { id: number }): Promise</*Cacao*/ any>;
 
   // ---------- Protected Helpers --------------------------------------- //
 

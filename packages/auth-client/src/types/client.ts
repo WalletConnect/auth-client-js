@@ -1,10 +1,10 @@
-import {ICore, IJsonRpcHistory} from "@walletconnect/types";
+import { ICore, IJsonRpcHistory } from "@walletconnect/types";
 import EventEmitter from "events";
-import {Logger} from "pino";
-import {Expirer} from "../controllers/expirer";
-import {Pairing} from "../controllers/pairing";
+import { Logger } from "pino";
+import { Expirer } from "../controllers/expirer";
+import { Pairing } from "../controllers/pairing";
 
-import {IAuthEngine} from "../types";
+import { IAuthEngine } from "../types";
 
 export declare namespace AuthClientTypes {
   // ---------- Data Types ----------------------------------------------- //

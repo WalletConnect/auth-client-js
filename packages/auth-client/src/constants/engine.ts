@@ -1,4 +1,4 @@
-import {JsonRpcTypes, RpcOpts} from "../types";
+import { JsonRpcTypes, RpcOpts } from "../types";
 
 export const ENGINE_RPC_OPTS: Record<JsonRpcTypes.WcMethod, RpcOpts> = {
   wc_authRequest: {
