@@ -105,6 +105,8 @@ export class AuthEngine extends IAuthEngine {
     // Subscribe to response topic
     await this.client.core.relayer.subscribe(responseTopic);
 
+    // SPEC: A will construct an authentication request.
+    // TODO: Fill out the rest of the properties here
     const {chainId, request} = params;
 
     // SPEC: A encrypts reuqest with symKey S
@@ -138,29 +140,6 @@ export class AuthEngine extends IAuthEngine {
   public getRequest: IAuthEngine["getRequest"] = async () => await Promise.resolve({});
 
   // ---------- Private Helpers --------------------------------------- //
-
-  // TODO: taken as-is from Sign, needs review
-  // unused, integrate as a step in AuthClient.request.
-  private async createPairing() {
-    const symKey = generateRandomBytes32();
-    const topic = await this.client.core.crypto.setSymKey(symKey);
-    const expiry = calcExpiry(FIVE_MINUTES);
-    const relay = {protocol: RELAYER_DEFAULT_PROTOCOL};
-    // @ts-ignore
-    const pairing = {topic, expiry, relay, active: false};
-    const uri = formatUri({
-      protocol: this.client.protocol,
-      version: this.client.version,
-      topic,
-      symKey,
-      relay,
-    });
-    await this.client.pairing.set(topic, pairing);
-    await this.client.core.relayer.subscribe(topic);
-    await this.setExpiry(topic, expiry);
-
-    return {topic, uri};
-  }
 
   private deletePairing = async (topic: string) => {
     await Promise.all([
