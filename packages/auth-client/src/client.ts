@@ -24,7 +24,7 @@ export class AuthClient extends IAuthClient {
   public engine: IAuthClient["engine"];
   public pairing: IAuthClient["pairing"];
   public expirer: IAuthClient["expirer"];
-  // public history: IAuthClient["history"];
+  public history: IAuthClient["history"];
 
   static async init(opts?: Record<string, any>) {
     const client = new AuthClient(opts);
@@ -51,8 +51,7 @@ export class AuthClient extends IAuthClient {
     this.pairing = new Pairing(this.core, this.logger);
     this.expirer = new Expirer(this.core, this.logger);
     this.engine = new AuthEngine(this);
-    // this.proposal = new Proposal(this.core, this.logger);
-    // this.history = new JsonRpcHistory(this.core, this.logger);
+    this.history = new JsonRpcHistory(this.core, this.logger);
   }
 
   get context() {
@@ -137,10 +136,9 @@ export class AuthClient extends IAuthClient {
     this.logger.trace(`Initialized`);
     try {
       await this.core.start();
-      // await this.pairing.init();
-      // await this.proposal.init();
+      await this.pairing.init();
+      await this.expirer.init();
       await this.history.init();
-      // await this.expirer.init();
       await this.engine.init();
       this.logger.info(`AuthClient Initialization Success`);
     } catch (error: any) {
