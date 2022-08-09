@@ -28,7 +28,7 @@ import {
 
 import {engineEvent} from "../utils/engineUtil";
 import {JsonRpcTypes, IAuthEngine} from "../types";
-import { /*EXPIRER_EVENTS,*/ AUTH_REQUEST_TOPIC, ENGINE_RPC_OPTS} from "../constants";
+import { /*EXPIRER_EVENTS,*/  ENGINE_RPC_OPTS} from "../constants";
 
 export class AuthEngine extends IAuthEngine {
   private events = new EventEmitter();
@@ -157,7 +157,7 @@ export class AuthEngine extends IAuthEngine {
     });
     await this.client.pairing.set(topic, pairing);
     await this.client.core.relayer.subscribe(topic);
-    // await this.setExpiry(topic, expiry);
+    await this.setExpiry(topic, expiry);
 
     return {topic, uri};
   }
@@ -171,14 +171,12 @@ export class AuthEngine extends IAuthEngine {
     ]);
   };
 
-  // private setExpiry: EnginePrivate["setExpiry"] = async (topic, expiry) => {
-  //   if (this.client.pairing.keys.includes(topic)) {
-  //     await this.client.pairing.update(topic, { expiry });
-  //   } else if (this.client.session.keys.includes(topic)) {
-  //     await this.client.session.update(topic, { expiry });
-  //   }
-  //   this.client.expirer.set(topic, expiry);
-  // };
+  protected setExpiry: IAuthEngine["setExpiry"] = async (topic, expiry) => {
+    if (this.client.pairing.keys.includes(topic)) {
+      await this.client.pairing.update(topic, {expiry});
+    }
+    this.client.expirer.set(topic, expiry);
+  };
 
   protected sendRequest: IAuthEngine["sendRequest"] = async (topic, method, params) => {
     const payload = formatJsonRpcRequest(method, params);
