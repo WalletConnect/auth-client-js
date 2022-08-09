@@ -1,8 +1,9 @@
-import { ICore, IJsonRpcHistory } from "@walletconnect/types";
+import {ICore, IJsonRpcHistory} from "@walletconnect/types";
 import EventEmitter from "events";
-import { Logger } from "pino";
+import {Logger} from "pino";
+import {Pairing} from "../controllers/pairing";
 
-import { IAuthEngine } from "../types";
+import {IAuthEngine} from "../types";
 
 export declare namespace AuthClientTypes {
   // ---------- Data Types ----------------------------------------------- //
@@ -31,6 +32,7 @@ export abstract class IAuthClient {
   public abstract readonly name: string;
 
   public abstract core: ICore;
+  public abstract pairing: Pairing;
   public abstract events: EventEmitter;
   public abstract logger: Logger;
   public abstract engine: IAuthEngine;
