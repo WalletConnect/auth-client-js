@@ -96,8 +96,8 @@ export class AuthEngine extends IAuthEngine {
     await this.client.pairing.set(pairingTopic, pairing);
 
     // SPEC: A generates keyPair X and generates response topic
-    let pubKey = await this.client.core.crypto.generateKeyPair();
-    let responseTopic = hashKey(pubKey);
+    const pubKey = await this.client.core.crypto.generateKeyPair();
+    const responseTopic = hashKey(pubKey);
 
     // Subscribe to response topic
     await this.client.core.relayer.subscribe(responseTopic);
@@ -147,31 +147,31 @@ export class AuthEngine extends IAuthEngine {
     this.client.expirer.set(topic, expiry);
   };
 
-  protected sendRequest: IAuthEngine["sendRequest"] = async (topic, method, params) => {
+  protected sendRequest: IAuthEngine["sendRequest"] = async (topic, method, params, encodeOpts) => {
     const payload = formatJsonRpcRequest(method, params);
-    const message = await this.client.core.crypto.encode(topic, payload);
-    const opts = ENGINE_RPC_OPTS[method].req;
-    await this.client.core.relayer.publish(topic, message, opts);
+    const message = await this.client.core.crypto.encode(topic, payload, encodeOpts);
+    const rpcOpts = ENGINE_RPC_OPTS[method].req;
+    await this.client.core.relayer.publish(topic, message, rpcOpts);
     this.client.history.set(topic, payload);
 
     return payload.id;
   };
 
-  protected sendResult: IAuthEngine["sendResult"] = async (id, topic, result) => {
+  protected sendResult: IAuthEngine["sendResult"] = async (id, topic, result, encodeOpts) => {
     const payload = formatJsonRpcResult(id, result);
-    const message = await this.client.core.crypto.encode(topic, payload);
+    const message = await this.client.core.crypto.encode(topic, payload, encodeOpts);
     const record = await this.client.history.get(topic, id);
-    const opts = ENGINE_RPC_OPTS[record.request.method].res;
-    await this.client.core.relayer.publish(topic, message, opts);
+    const rpcOpts = ENGINE_RPC_OPTS[record.request.method].res;
+    await this.client.core.relayer.publish(topic, message, rpcOpts);
     await this.client.history.resolve(payload);
   };
 
-  protected sendError: IAuthEngine["sendError"] = async (id, topic, error) => {
+  protected sendError: IAuthEngine["sendError"] = async (id, topic, error, encodeOpts) => {
     const payload = formatJsonRpcError(id, error);
-    const message = await this.client.core.crypto.encode(topic, payload);
+    const message = await this.client.core.crypto.encode(topic, payload, encodeOpts);
     const record = await this.client.history.get(topic, id);
-    const opts = ENGINE_RPC_OPTS[record.request.method].res;
-    await this.client.core.relayer.publish(topic, message, opts);
+    const rpcOpts = ENGINE_RPC_OPTS[record.request.method].res;
+    await this.client.core.relayer.publish(topic, message, rpcOpts);
     await this.client.history.resolve(payload);
   };
 
