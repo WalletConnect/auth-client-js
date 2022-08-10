@@ -1,4 +1,4 @@
-import { ICore, IJsonRpcHistory } from "@walletconnect/types";
+import { ICore, IJsonRpcHistory, IStore } from "@walletconnect/types";
 import EventEmitter from "events";
 import { Logger } from "pino";
 import { Expirer } from "../controllers/expirer";
@@ -33,6 +33,7 @@ export abstract class IAuthClient {
   public abstract readonly name: string;
 
   public abstract core: ICore;
+  public abstract authKeys: IStore<string, string>;
   public abstract pairing: Pairing;
   public abstract expirer: Expirer;
   public abstract events: EventEmitter;
