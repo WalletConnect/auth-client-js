@@ -1,6 +1,6 @@
-import { generateRandomBytes32 } from "@walletconnect/utils";
-import { expect, describe, it, beforeAll } from "vitest";
-import { AuthClient } from "../src/client";
+import {generateRandomBytes32} from "@walletconnect/utils";
+import {expect, describe, it, beforeAll} from "vitest";
+import {AuthClient} from "../src/client";
 
 describe("AuthClient", () => {
   let client: AuthClient;
@@ -36,12 +36,13 @@ describe("AuthClient", () => {
     expect(client.pairing).toBeDefined();
   });
 
-  it("can request auth", () => {
-    client.request({
+  it("can request auth", async () => {
+    const {uri} = await client.request({
       aud: "http://localhost:3000/login",
       domain: "localhost:3000",
       chainId: "chainId",
       nonce: "nonce",
     });
+    console.log(uri);
   });
 });
