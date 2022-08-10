@@ -61,7 +61,7 @@ export abstract class IAuthEngine {
     method: M,
     // params: JsonRpcTypes.RequestParams[M]
     params: any,
-    opts?: CryptoTypes.EncodeOptions,
+    encodeOpts?: CryptoTypes.EncodeOptions,
   ): Promise<number>;
 
   // @ts-expect-error - needs Results interface
@@ -70,7 +70,7 @@ export abstract class IAuthEngine {
     topic: string,
     // result: JsonRpcTypes.Results[M]
     result: any,
-    opts?: CryptoTypes.EncodeOptions,
+    encodeOpts?: CryptoTypes.EncodeOptions,
   ): Promise<void>;
 
   protected abstract sendError(
