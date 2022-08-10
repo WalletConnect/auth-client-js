@@ -16,14 +16,14 @@ describe("AuthClient", () => {
       },
     });
 
-    // peer = await AuthClient.init({
-    //   logger: "debug",
-    //   relayUrl: "ws://0.0.0.0:5555",
-    //   projectId: undefined,
-    //   storageOptions: {
-    //     database: ":memory:",
-    //   },
-    // });
+    peer = await AuthClient.init({
+      logger: "debug",
+      relayUrl: "ws://0.0.0.0:5555",
+      projectId: undefined,
+      storageOptions: {
+        database: ":memory:",
+      },
+    });
   });
 
   it("can be instantiated", () => {
@@ -31,5 +31,17 @@ describe("AuthClient", () => {
     expect(client.core).toBeDefined();
     expect(client.events).toBeDefined();
     expect(client.logger).toBeDefined();
+    expect(client.expirer).toBeDefined();
+    expect(client.history).toBeDefined();
+    expect(client.pairing).toBeDefined();
+  });
+
+  it("can request auth", () => {
+    client.request({
+      aud: "http://localhost:3000/login",
+      domain: "localhost:3000",
+      chainId: "chainId",
+      nonce: "nonce",
+    });
   });
 });

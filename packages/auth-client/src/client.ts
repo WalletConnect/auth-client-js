@@ -1,17 +1,17 @@
-import {Core} from "@walletconnect/core";
+import { Core } from "@walletconnect/core";
 import {
   generateChildLogger,
   getDefaultLoggerOptions,
   getLoggerContext,
 } from "@walletconnect/logger";
-import {EventEmitter} from "events";
+import { EventEmitter } from "events";
 import pino from "pino";
 
-import {IAuthClient} from "./types";
-import {JsonRpcHistory, AuthEngine} from "./controllers";
-import {AUTH_CLIENT_PROTOCOL, AUTH_CLIENT_VERSION} from "./constants";
-import {Pairing} from "./controllers/pairing";
-import {Expirer} from "./controllers/expirer";
+import { IAuthClient } from "./types";
+import { JsonRpcHistory, AuthEngine } from "./controllers";
+import { AUTH_CLIENT_PROTOCOL, AUTH_CLIENT_VERSION } from "./constants";
+import { Pairing } from "./controllers/pairing";
+import { Expirer } from "./controllers/expirer";
 
 export class AuthClient extends IAuthClient {
   public readonly protocol = AUTH_CLIENT_PROTOCOL;
@@ -40,10 +40,10 @@ export class AuthClient extends IAuthClient {
       typeof opts?.logger !== "undefined" && typeof opts?.logger !== "string"
         ? opts.logger
         : pino(
-          getDefaultLoggerOptions({
-            level: opts?.logger || "error",
-          }),
-        );
+            getDefaultLoggerOptions({
+              level: opts?.logger || "error",
+            }),
+          );
 
     this.core = opts?.core || new Core(opts);
     this.logger = generateChildLogger(logger, this.name);

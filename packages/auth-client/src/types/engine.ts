@@ -20,6 +20,20 @@ export declare namespace AuthEngineTypes {
     topic: string;
     payload: T;
   }
+
+  // https://github.com/ChainAgnostic/CAIPs/pull/74
+  interface RequestParams {
+    chainId: string;
+    domain: string;
+    nonce: string;
+    aud: string;
+    type?: string;
+    nbf?: string;
+    exp?: string;
+    statement?: string;
+    requestId?: string;
+    resources?: string[];
+  }
 }
 
 // TODO: define missing param and data types
@@ -30,7 +44,9 @@ export abstract class IAuthEngine {
 
   public abstract pair(params: { uri: string }): Promise</*Sequence*/ any>;
 
-  public abstract request(params: /*RequestParams*/ any): Promise<{ uri: string; id: number }>;
+  public abstract request(
+    params: AuthEngineTypes.RequestParams,
+  ): Promise<{ uri: string; id: number }>;
 
   public abstract respond(params: /*RespondParams*/ any): Promise<void>;
 

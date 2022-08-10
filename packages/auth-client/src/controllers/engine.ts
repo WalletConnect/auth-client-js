@@ -65,16 +65,13 @@ export class AuthEngine extends IAuthEngine {
     await this.client.core.crypto.setSymKey(symKey, topic);
     await this.client.core.relayer.subscribe(topic, { relay });
 
-    // TODO: Figure out post-alpha
-    // await this.setExpiry(topic, expiry);
+    await this.setExpiry(topic, expiry);
 
     return pairing;
   };
 
   // TODO: taken as-is from Sign, needs review
-  public request: IAuthEngine["request"] = async <T>(
-    params: /*AuthEngineTypes.RequestParams*/ any,
-  ) => {
+  public request: IAuthEngine["request"] = async <T>(params) => {
     this.isInitialized();
     // await this.isValidRequest(params);
 
@@ -112,13 +109,6 @@ export class AuthEngine extends IAuthEngine {
     // SPEC: A encrypts reuqest with symKey S
     // SPEC: A publishes encrypted request to topic
     const id = await this.sendRequest(pairingTopic, "wc_authRequest", { request, chainId });
-    const { done, resolve, reject } = createDelayedPromise<T>();
-    this.events.once(engineEvent("auth_request", id), ({ error, result }) => {
-      if (error) reject(error);
-      else resolve(result);
-    });
-    await done();
-
     return { uri, id };
   };
 
@@ -251,7 +241,7 @@ export class AuthEngine extends IAuthEngine {
     try {
       const { id, params } = payload;
       // console.log("onAuthRequest > payload:", payload);
-      // await this.sendResult<"wc_authRequest">(payload.id, topic, true);
+      await this.sendResult<"wc_authRequest">(payload.id, topic, true);
       this.client.emit("auth_request", {
         id,
         topic,
