@@ -11,6 +11,7 @@ import {
 } from "@walletconnect/jsonrpc-utils";
 import { FIVE_MINUTES } from "@walletconnect/time";
 import {
+  IStore,
   RelayerTypes,
   /*ExpirerTypes,*/
 } from "@walletconnect/types";
@@ -22,13 +23,14 @@ import {
   createDelayedPromise,
   getInternalError,
   hashKey,
+  TYPE_1,
   // getSdkError,
   // isExpired,
 } from "@walletconnect/utils";
 
 import { engineEvent } from "../utils/engineUtil";
 import { JsonRpcTypes, IAuthEngine } from "../types";
-import { /*EXPIRER_EVENTS,*/ ENGINE_RPC_OPTS } from "../constants";
+import { /*EXPIRER_EVENTS,*/ AUTH_CLIENT_PUBLIC_KEY_NAME, ENGINE_RPC_OPTS } from "../constants";
 
 export class AuthEngine extends IAuthEngine {
   private events = new EventEmitter();
@@ -71,7 +73,7 @@ export class AuthEngine extends IAuthEngine {
   };
 
   // TODO: taken as-is from Sign, needs review
-  public request: IAuthEngine["request"] = async <T>(params) => {
+  public request: IAuthEngine["request"] = async <T>(params: any) => {
     this.isInitialized();
     // await this.isValidRequest(params);
 
@@ -96,8 +98,10 @@ export class AuthEngine extends IAuthEngine {
     await this.client.pairing.set(pairingTopic, pairing);
 
     // SPEC: A generates keyPair X and generates response topic
-    const pubKey = await this.client.core.crypto.generateKeyPair();
-    const responseTopic = hashKey(pubKey);
+    const publicKey = await this.client.core.crypto.generateKeyPair();
+    const responseTopic = hashKey(publicKey);
+
+    this.client.authKeys.set(AUTH_CLIENT_PUBLIC_KEY_NAME, publicKey);
 
     // Subscribe to response topic
     await this.client.core.relayer.subscribe(responseTopic);
@@ -108,7 +112,11 @@ export class AuthEngine extends IAuthEngine {
 
     // SPEC: A encrypts reuqest with symKey S
     // SPEC: A publishes encrypted request to topic
-    const id = await this.sendRequest(pairingTopic, "wc_authRequest", { request, chainId });
+    const id = await this.sendRequest(pairingTopic, "wc_authRequest", {
+      request,
+      chainId,
+      requester: { publicKey },
+    });
     return { uri, id };
   };
 
@@ -118,7 +126,7 @@ export class AuthEngine extends IAuthEngine {
     const { topic, response } = params;
     const { id } = response;
     if (isJsonRpcResult(response)) {
-      await this.sendResult(id, topic, response.result);
+      await this.sendResult(id, topic, response.result, {});
     } else if (isJsonRpcError(response)) {
       await this.sendError(id, topic, response.error);
     }
@@ -197,7 +205,12 @@ export class AuthEngine extends IAuthEngine {
       RELAYER_EVENTS.message,
       async (event: RelayerTypes.MessageEvent) => {
         const { topic, message } = event;
-        const payload = await this.client.core.crypto.decode(topic, message);
+        const receiverPublicKey = this.client.authKeys.keys.includes(AUTH_CLIENT_PUBLIC_KEY_NAME)
+          ? this.client.authKeys.get(AUTH_CLIENT_PUBLIC_KEY_NAME)
+          : "";
+        const payload = await this.client.core.crypto.decode(topic, message, {
+          receiverPublicKey,
+        });
         if (isJsonRpcRequest(payload)) {
           this.client.history.set(topic, payload);
           this.onRelayEventRequest({ topic, payload });
@@ -240,8 +253,23 @@ export class AuthEngine extends IAuthEngine {
   protected onAuthRequest: IAuthEngine["onAuthRequest"] = async (topic, payload) => {
     try {
       const { id, params } = payload;
-      // console.log("onAuthRequest > payload:", payload);
-      await this.sendResult<"wc_authRequest">(payload.id, topic, true);
+      const receiverPublicKey = params.requester.publicKey;
+      const senderPublicKey = await this.client.core.crypto.generateKeyPair();
+
+      const responseTopic = hashKey(receiverPublicKey);
+      await this.sendResult<"wc_authRequest">(
+        payload.id,
+        responseTopic,
+        {
+          payload: {},
+          signature: "signature",
+        },
+        {
+          type: TYPE_1,
+          receiverPublicKey,
+          senderPublicKey,
+        },
+      );
       this.client.emit("auth_request", {
         id,
         topic,
