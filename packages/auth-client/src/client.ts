@@ -1,4 +1,4 @@
-import { Core } from "@walletconnect/core";
+import { Core, Store } from "@walletconnect/core";
 import {
   generateChildLogger,
   getDefaultLoggerOptions,
@@ -9,9 +9,10 @@ import pino from "pino";
 
 import { IAuthClient } from "./types";
 import { JsonRpcHistory, AuthEngine } from "./controllers";
-import { AUTH_CLIENT_PROTOCOL, AUTH_CLIENT_VERSION } from "./constants";
+import { AUTH_CLIENT_PROTOCOL, AUTH_CLIENT_STORAGE_PREFIX, AUTH_CLIENT_VERSION } from "./constants";
 import { Pairing } from "./controllers/pairing";
 import { Expirer } from "./controllers/expirer";
+import { IStore } from "@walletconnect/types";
 
 export class AuthClient extends IAuthClient {
   public readonly protocol = AUTH_CLIENT_PROTOCOL;
@@ -25,6 +26,7 @@ export class AuthClient extends IAuthClient {
   public pairing: IAuthClient["pairing"];
   public expirer: IAuthClient["expirer"];
   public history: IAuthClient["history"];
+  public authKeys: IStore<any, any>;
 
   static async init(opts?: Record<string, any>) {
     const client = new AuthClient(opts);
@@ -47,7 +49,7 @@ export class AuthClient extends IAuthClient {
 
     this.core = opts?.core || new Core(opts);
     this.logger = generateChildLogger(logger, this.name);
-    // TODO:
+    this.authKeys = new Store(this.core, this.logger, "authKeys", AUTH_CLIENT_STORAGE_PREFIX);
     this.pairing = new Pairing(this.core, this.logger);
     this.expirer = new Expirer(this.core, this.logger);
     this.engine = new AuthEngine(this);
@@ -140,6 +142,7 @@ export class AuthClient extends IAuthClient {
       await this.expirer.init();
       await this.history.init();
       await this.engine.init();
+      await this.authKeys.init();
       this.logger.info(`AuthClient Initialization Success`);
     } catch (error: any) {
       this.logger.info(`AuthClient Initialization Failure`);
