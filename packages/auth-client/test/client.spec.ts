@@ -1,6 +1,6 @@
-import {generateRandomBytes32} from "@walletconnect/utils";
-import {expect, describe, it, beforeAll} from "vitest";
-import {AuthClient} from "../src/client";
+import { generateRandomBytes32 } from "@walletconnect/utils";
+import { expect, describe, it, beforeAll, vi } from "vitest";
+import { AuthClient } from "../src/client";
 
 describe("AuthClient", () => {
   let client: AuthClient;
@@ -36,13 +36,29 @@ describe("AuthClient", () => {
     expect(client.pairing).toBeDefined();
   });
 
-  it("can request auth", async () => {
-    const {uri} = await client.request({
+  it("Pairs", async () => {
+    const { uri } = await client.request({
       aud: "http://localhost:3000/login",
       domain: "localhost:3000",
       chainId: "chainId",
       nonce: "nonce",
     });
-    console.log(uri);
+
+    await peer.pair({ uri });
+
+    // Give enough time for the message to go through
+    // TODO: Figure out a cleaner way to do this
+    await new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({});
+      }, 1000);
+    });
+
+    // Ensure they paired
+    expect(client.pairing.keys).to.eql(peer.pairing.keys);
+
+    // Ensure each client published once (request and respond)
+    expect(client.history.records.size).to.eql(peer.history.records.size);
+    expect(client.history.records.size).to.eql(1);
   });
 });
