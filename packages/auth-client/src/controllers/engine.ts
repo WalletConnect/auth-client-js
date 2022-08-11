@@ -19,15 +19,15 @@ import {
   formatUri,
   generateRandomBytes32,
   parseUri,
-  createDelayedPromise,
   getInternalError,
+  hashKey,
+  TYPE_1,
   // getSdkError,
   // isExpired,
 } from "@walletconnect/utils";
 
-import { engineEvent } from "../utils/engineUtil";
 import { JsonRpcTypes, IAuthEngine } from "../types";
-import { /*EXPIRER_EVENTS,*/ ENGINE_RPC_OPTS } from "../constants";
+import { /*EXPIRER_EVENTS,*/ AUTH_CLIENT_PUBLIC_KEY_NAME, ENGINE_RPC_OPTS } from "../constants";
 
 export class AuthEngine extends IAuthEngine {
   private events = new EventEmitter();
@@ -52,44 +52,94 @@ export class AuthEngine extends IAuthEngine {
   // TODO: taken as-is from Sign, needs review
   public pair: IAuthEngine["pair"] = async (params) => {
     this.isInitialized();
+    // TODO: Check this out after happy path is complete
     // this.isValidPair(params);
     const { topic, symKey, relay } = parseUri(params.uri);
     const expiry = calcExpiry(FIVE_MINUTES);
-    const pairing = { topic, relay, expiry, active: false };
-    // await this.client.pairing.set(topic, pairing);
+    const pairing = { relay, expiry, active: true };
+    await this.client.pairing.set(topic, {
+      topic,
+      ...pairing,
+    });
     await this.client.core.crypto.setSymKey(symKey, topic);
     await this.client.core.relayer.subscribe(topic, { relay });
-    // await this.setExpiry(topic, expiry);
+
+    await this.setExpiry(topic, expiry);
 
     return pairing;
   };
 
   // TODO: taken as-is from Sign, needs review
-  public request: IAuthEngine["request"] = async <T>(
-    params: /*AuthEngineTypes.RequestParams*/ any,
-  ) => {
+  public request: IAuthEngine["request"] = async <T>(params: any) => {
     this.isInitialized();
     // await this.isValidRequest(params);
-    const { chainId, request, topic } = params;
-    const id = await this.sendRequest(topic, "wc_authRequest", { request, chainId });
-    const { done, resolve, reject } = createDelayedPromise<T>();
-    this.events.once(engineEvent("auth_request", id), ({ error, result }) => {
-      if (error) reject(error);
-      else resolve(result);
+
+    // SPEC: A creates random symKey S for pairing topic
+    const symKey = generateRandomBytes32();
+
+    // SPEC: Pairing topic is the hash of symkey S
+    const pairingTopic = await this.client.core.crypto.setSymKey(symKey);
+
+    const expiry = calcExpiry(FIVE_MINUTES);
+    const relay = { protocol: RELAYER_DEFAULT_PROTOCOL };
+
+    // Preparing pairing URI
+    const pairing = { topic: pairingTopic, expiry, relay, active: false };
+    const uri = formatUri({
+      protocol: this.client.protocol,
+      version: this.client.version,
+      topic: pairingTopic,
+      symKey,
+      relay,
     });
-    return await done();
+    await this.client.pairing.set(pairingTopic, pairing);
+
+    // SPEC: A generates keyPair X and generates response topic
+    const publicKey = await this.client.core.crypto.generateKeyPair();
+    const responseTopic = hashKey(publicKey);
+
+    this.client.authKeys.set(AUTH_CLIENT_PUBLIC_KEY_NAME, publicKey);
+
+    // Subscribe to response topic
+    await this.client.core.relayer.subscribe(responseTopic);
+
+    // SPEC: A will construct an authentication request.
+    // TODO: Fill out the rest of the properties here
+    const { chainId, request } = params;
+
+    // SPEC: A encrypts reuqest with symKey S
+    // SPEC: A publishes encrypted request to topic
+    const id = await this.sendRequest(pairingTopic, "wc_authRequest", {
+      request,
+      chainId,
+      requester: { publicKey },
+    });
+    return { uri, id };
   };
 
-  public respond: IAuthEngine["respond"] = async (params) => {
+  public respond: IAuthEngine["respond"] = async (respondParams) => {
     this.isInitialized();
     // await this.isValidRespond(params);
-    const { topic, response } = params;
-    const { id } = response;
-    if (isJsonRpcResult(response)) {
-      await this.sendResult(id, topic, response.result);
-    } else if (isJsonRpcError(response)) {
-      await this.sendError(id, topic, response.error);
-    }
+
+    const payload = this.client.pendingRequests.get(respondParams.id);
+
+    const receiverPublicKey = payload.params.requester.publicKey;
+    const senderPublicKey = await this.client.core.crypto.generateKeyPair();
+    const responseTopic = hashKey(receiverPublicKey);
+
+    await this.sendResult<"wc_authRequest">(
+      payload.id,
+      responseTopic,
+      {
+        payload: {},
+        signature: "signature",
+      },
+      {
+        type: TYPE_1,
+        receiverPublicKey,
+        senderPublicKey,
+      },
+    );
   };
 
   public getPendingRequests: IAuthEngine["getPendingRequests"] = async () =>
@@ -98,29 +148,6 @@ export class AuthEngine extends IAuthEngine {
   public getRequest: IAuthEngine["getRequest"] = async () => await Promise.resolve({});
 
   // ---------- Private Helpers --------------------------------------- //
-
-  // TODO: taken as-is from Sign, needs review
-  // @ts-expect-error - unused, integrate as a step in AuthClient.request.
-  private async createPairing() {
-    const symKey = generateRandomBytes32();
-    const topic = await this.client.core.crypto.setSymKey(symKey);
-    const expiry = calcExpiry(FIVE_MINUTES);
-    const relay = { protocol: RELAYER_DEFAULT_PROTOCOL };
-    // @ts-ignore
-    const pairing = { topic, expiry, relay, active: false };
-    const uri = formatUri({
-      protocol: this.client.protocol,
-      version: this.client.version,
-      topic,
-      symKey,
-      relay,
-    });
-    // await this.client.pairing.set(topic, pairing);
-    await this.client.core.relayer.subscribe(topic);
-    // await this.setExpiry(topic, expiry);
-
-    return { topic, uri };
-  }
 
   private deletePairing = async (topic: string) => {
     await Promise.all([
@@ -131,40 +158,38 @@ export class AuthEngine extends IAuthEngine {
     ]);
   };
 
-  // private setExpiry: EnginePrivate["setExpiry"] = async (topic, expiry) => {
-  //   if (this.client.pairing.keys.includes(topic)) {
-  //     await this.client.pairing.update(topic, { expiry });
-  //   } else if (this.client.session.keys.includes(topic)) {
-  //     await this.client.session.update(topic, { expiry });
-  //   }
-  //   this.client.expirer.set(topic, expiry);
-  // };
+  protected setExpiry: IAuthEngine["setExpiry"] = async (topic, expiry) => {
+    if (this.client.pairing.keys.includes(topic)) {
+      await this.client.pairing.update(topic, { expiry });
+    }
+    this.client.expirer.set(topic, expiry);
+  };
 
-  protected sendRequest: IAuthEngine["sendRequest"] = async (topic, method, params) => {
+  protected sendRequest: IAuthEngine["sendRequest"] = async (topic, method, params, encodeOpts) => {
     const payload = formatJsonRpcRequest(method, params);
-    const message = await this.client.core.crypto.encode(topic, payload);
-    const opts = ENGINE_RPC_OPTS[method].req;
-    await this.client.core.relayer.publish(topic, message, opts);
+    const message = await this.client.core.crypto.encode(topic, payload, encodeOpts);
+    const rpcOpts = ENGINE_RPC_OPTS[method].req;
+    await this.client.core.relayer.publish(topic, message, rpcOpts);
     this.client.history.set(topic, payload);
 
     return payload.id;
   };
 
-  protected sendResult: IAuthEngine["sendResult"] = async (id, topic, result) => {
+  protected sendResult: IAuthEngine["sendResult"] = async (id, topic, result, encodeOpts) => {
     const payload = formatJsonRpcResult(id, result);
-    const message = await this.client.core.crypto.encode(topic, payload);
+    const message = await this.client.core.crypto.encode(topic, payload, encodeOpts);
     const record = await this.client.history.get(topic, id);
-    const opts = ENGINE_RPC_OPTS[record.request.method].res;
-    await this.client.core.relayer.publish(topic, message, opts);
+    const rpcOpts = ENGINE_RPC_OPTS[record.request.method].res;
+    await this.client.core.relayer.publish(topic, message, rpcOpts);
     await this.client.history.resolve(payload);
   };
 
-  protected sendError: IAuthEngine["sendError"] = async (id, topic, error) => {
+  protected sendError: IAuthEngine["sendError"] = async (id, topic, error, encodeOpts) => {
     const payload = formatJsonRpcError(id, error);
-    const message = await this.client.core.crypto.encode(topic, payload);
+    const message = await this.client.core.crypto.encode(topic, payload, encodeOpts);
     const record = await this.client.history.get(topic, id);
-    const opts = ENGINE_RPC_OPTS[record.request.method].res;
-    await this.client.core.relayer.publish(topic, message, opts);
+    const rpcOpts = ENGINE_RPC_OPTS[record.request.method].res;
+    await this.client.core.relayer.publish(topic, message, rpcOpts);
     await this.client.history.resolve(payload);
   };
 
@@ -190,7 +215,12 @@ export class AuthEngine extends IAuthEngine {
       RELAYER_EVENTS.message,
       async (event: RelayerTypes.MessageEvent) => {
         const { topic, message } = event;
-        const payload = await this.client.core.crypto.decode(topic, message);
+        const receiverPublicKey = this.client.authKeys.keys.includes(AUTH_CLIENT_PUBLIC_KEY_NAME)
+          ? this.client.authKeys.get(AUTH_CLIENT_PUBLIC_KEY_NAME)
+          : "";
+        const payload = await this.client.core.crypto.decode(topic, message, {
+          receiverPublicKey,
+        });
         if (isJsonRpcRequest(payload)) {
           this.client.history.set(topic, payload);
           this.onRelayEventRequest({ topic, payload });
@@ -232,13 +262,12 @@ export class AuthEngine extends IAuthEngine {
 
   protected onAuthRequest: IAuthEngine["onAuthRequest"] = async (topic, payload) => {
     try {
-      const { id, params } = payload;
-      // console.log("onAuthRequest > payload:", payload);
-      // await this.sendResult<"wc_authRequest">(payload.id, topic, true);
+      await this.client.pendingRequests.set(payload.id, payload);
+
       this.client.emit("auth_request", {
-        id,
+        id: payload.id,
         topic,
-        params,
+        params: payload.params,
       });
     } catch (err: any) {
       await this.sendError(payload.id, topic, err);
@@ -249,10 +278,9 @@ export class AuthEngine extends IAuthEngine {
   protected onAuthResponse: IAuthEngine["onAuthResponse"] = (topic, payload) => {
     const { id } = payload;
     if (isJsonRpcResult(payload)) {
-      this.events.emit(engineEvent("auth_request", id), { result: payload.result });
       this.client.emit("auth_response", { id, topic, params: payload });
     } else if (isJsonRpcError(payload)) {
-      this.events.emit(engineEvent("auth_request", id), { error: payload.error });
+      this.client.emit("auth_response", { id, topic, params: payload });
     }
   };
 

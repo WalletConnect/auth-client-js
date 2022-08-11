@@ -12,6 +12,7 @@ pids
 *.pid.lock
 # Dependency directories
 **/node_modules
+node_modules
 jspm_packages
 # Optional npm cache directory
 .npm

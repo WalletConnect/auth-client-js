@@ -20,6 +20,25 @@ export declare namespace AuthEngineTypes {
     topic: string;
     payload: T;
   }
+
+  // https://github.com/ChainAgnostic/CAIPs/pull/74
+  interface RequestParams {
+    chainId: string;
+    domain: string;
+    nonce: string;
+    aud: string;
+    type?: string;
+    nbf?: string;
+    exp?: string;
+    statement?: string;
+    requestId?: string;
+    resources?: string[];
+  }
+
+  interface RespondParams {
+    id: number;
+    signature: /*CacaoSignature*/ string;
+  }
 }
 
 // TODO: define missing param and data types
@@ -30,9 +49,11 @@ export abstract class IAuthEngine {
 
   public abstract pair(params: { uri: string }): Promise</*Sequence*/ any>;
 
-  public abstract request(params: /*RequestParams*/ any): Promise<{ uri: string; id: number }>;
+  public abstract request(
+    params: AuthEngineTypes.RequestParams,
+  ): Promise<{ uri: string; id: number }>;
 
-  public abstract respond(params: /*RespondParams*/ any): Promise<void>;
+  public abstract respond(params: AuthEngineTypes.RespondParams): Promise<void>;
 
   public abstract getPendingRequests(): Promise<Record<number, /*PendingRequest*/ any>>;
 
@@ -45,7 +66,7 @@ export abstract class IAuthEngine {
     method: M,
     // params: JsonRpcTypes.RequestParams[M]
     params: any,
-    opts?: CryptoTypes.EncodeOptions,
+    encodeOpts?: CryptoTypes.EncodeOptions,
   ): Promise<number>;
 
   // @ts-expect-error - needs Results interface
@@ -54,7 +75,7 @@ export abstract class IAuthEngine {
     topic: string,
     // result: JsonRpcTypes.Results[M]
     result: any,
-    opts?: CryptoTypes.EncodeOptions,
+    encodeOpts?: CryptoTypes.EncodeOptions,
   ): Promise<void>;
 
   protected abstract sendError(
@@ -63,6 +84,8 @@ export abstract class IAuthEngine {
     error: ErrorResponse,
     opts?: CryptoTypes.EncodeOptions,
   ): Promise<void>;
+
+  protected abstract setExpiry(topic: string, expiry: number): Promise<void>;
 
   protected abstract cleanup(): Promise<void>;
 

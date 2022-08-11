@@ -1,4 +1,4 @@
-import { Core } from "@walletconnect/core";
+import { Core, Store } from "@walletconnect/core";
 import {
   generateChildLogger,
   getDefaultLoggerOptions,
@@ -9,7 +9,9 @@ import pino from "pino";
 
 import { IAuthClient } from "./types";
 import { JsonRpcHistory, AuthEngine } from "./controllers";
-import { AUTH_CLIENT_PROTOCOL, AUTH_CLIENT_VERSION } from "./constants";
+import { AUTH_CLIENT_PROTOCOL, AUTH_CLIENT_STORAGE_PREFIX, AUTH_CLIENT_VERSION } from "./constants";
+import { Pairing } from "./controllers/pairing";
+import { Expirer } from "./controllers/expirer";
 
 export class AuthClient extends IAuthClient {
   public readonly protocol = AUTH_CLIENT_PROTOCOL;
@@ -20,11 +22,11 @@ export class AuthClient extends IAuthClient {
   public logger: IAuthClient["logger"];
   public events: IAuthClient["events"] = new EventEmitter();
   public engine: IAuthClient["engine"];
-  // public pairing: ISignClient["pairing"];
-  // public session: ISignClient["session"];
-  // public proposal: ISignClient["proposal"];
+  public pairing: IAuthClient["pairing"];
+  public expirer: IAuthClient["expirer"];
   public history: IAuthClient["history"];
-  // public expirer: ISignClient["expirer"];
+  public authKeys: IAuthClient["authKeys"];
+  public pendingRequests: IAuthClient["pendingRequests"];
 
   static async init(opts?: Record<string, any>) {
     const client = new AuthClient(opts);
@@ -47,12 +49,17 @@ export class AuthClient extends IAuthClient {
 
     this.core = opts?.core || new Core(opts);
     this.logger = generateChildLogger(logger, this.name);
-    // TODO:
-    // this.pairing = new Pairing(this.core, this.logger);
-    // this.proposal = new Proposal(this.core, this.logger);
-    this.history = new JsonRpcHistory(this.core, this.logger);
-    // this.expirer = new Expirer(this.core, this.logger);
+    this.authKeys = new Store(this.core, this.logger, "authKeys", AUTH_CLIENT_STORAGE_PREFIX);
+    this.pendingRequests = new Store(
+      this.core,
+      this.logger,
+      "pendingRequests",
+      AUTH_CLIENT_STORAGE_PREFIX,
+    );
+    this.pairing = new Pairing(this.core, this.logger);
+    this.expirer = new Expirer(this.core, this.logger);
     this.engine = new AuthEngine(this);
+    this.history = new JsonRpcHistory(this.core, this.logger);
   }
 
   get context() {
@@ -137,10 +144,11 @@ export class AuthClient extends IAuthClient {
     this.logger.trace(`Initialized`);
     try {
       await this.core.start();
-      // await this.pairing.init();
-      // await this.proposal.init();
+      await this.pairing.init();
+      await this.authKeys.init();
+      await this.pendingRequests.init();
+      await this.expirer.init();
       await this.history.init();
-      // await this.expirer.init();
       await this.engine.init();
       this.logger.info(`AuthClient Initialization Success`);
     } catch (error: any) {
