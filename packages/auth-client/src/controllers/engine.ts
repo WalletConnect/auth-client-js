@@ -11,7 +11,6 @@ import {
 } from "@walletconnect/jsonrpc-utils";
 import { FIVE_MINUTES } from "@walletconnect/time";
 import {
-  IStore,
   RelayerTypes,
   /*ExpirerTypes,*/
 } from "@walletconnect/types";
@@ -20,7 +19,6 @@ import {
   formatUri,
   generateRandomBytes32,
   parseUri,
-  createDelayedPromise,
   getInternalError,
   hashKey,
   TYPE_1,
@@ -28,7 +26,6 @@ import {
   // isExpired,
 } from "@walletconnect/utils";
 
-import { engineEvent } from "../utils/engineUtil";
 import { JsonRpcTypes, IAuthEngine } from "../types";
 import { /*EXPIRER_EVENTS,*/ AUTH_CLIENT_PUBLIC_KEY_NAME, ENGINE_RPC_OPTS } from "../constants";
 
@@ -120,16 +117,29 @@ export class AuthEngine extends IAuthEngine {
     return { uri, id };
   };
 
-  public respond: IAuthEngine["respond"] = async (params) => {
+  public respond: IAuthEngine["respond"] = async (respondParams) => {
     this.isInitialized();
     // await this.isValidRespond(params);
-    const { topic, response } = params;
-    const { id } = response;
-    if (isJsonRpcResult(response)) {
-      await this.sendResult(id, topic, response.result, {});
-    } else if (isJsonRpcError(response)) {
-      await this.sendError(id, topic, response.error);
-    }
+
+    const payload = this.client.pendingRequests.get(respondParams.id);
+
+    const receiverPublicKey = payload.params.requester.publicKey;
+    const senderPublicKey = await this.client.core.crypto.generateKeyPair();
+    const responseTopic = hashKey(receiverPublicKey);
+
+    await this.sendResult<"wc_authRequest">(
+      payload.id,
+      responseTopic,
+      {
+        payload: {},
+        signature: "signature",
+      },
+      {
+        type: TYPE_1,
+        receiverPublicKey,
+        senderPublicKey,
+      },
+    );
   };
 
   public getPendingRequests: IAuthEngine["getPendingRequests"] = async () =>
@@ -252,28 +262,12 @@ export class AuthEngine extends IAuthEngine {
 
   protected onAuthRequest: IAuthEngine["onAuthRequest"] = async (topic, payload) => {
     try {
-      const { id, params } = payload;
-      const receiverPublicKey = params.requester.publicKey;
-      const senderPublicKey = await this.client.core.crypto.generateKeyPair();
+      await this.client.pendingRequests.set(payload.id, payload);
 
-      const responseTopic = hashKey(receiverPublicKey);
-      await this.sendResult<"wc_authRequest">(
-        payload.id,
-        responseTopic,
-        {
-          payload: {},
-          signature: "signature",
-        },
-        {
-          type: TYPE_1,
-          receiverPublicKey,
-          senderPublicKey,
-        },
-      );
       this.client.emit("auth_request", {
-        id,
+        id: payload.id,
         topic,
-        params,
+        params: payload.params,
       });
     } catch (err: any) {
       await this.sendError(payload.id, topic, err);
@@ -284,10 +278,9 @@ export class AuthEngine extends IAuthEngine {
   protected onAuthResponse: IAuthEngine["onAuthResponse"] = (topic, payload) => {
     const { id } = payload;
     if (isJsonRpcResult(payload)) {
-      this.events.emit(engineEvent("auth_request", id), { result: payload.result });
       this.client.emit("auth_response", { id, topic, params: payload });
     } else if (isJsonRpcError(payload)) {
-      this.events.emit(engineEvent("auth_request", id), { error: payload.error });
+      this.client.emit("auth_response", { id, topic, params: payload });
     }
   };
 

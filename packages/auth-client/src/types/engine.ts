@@ -34,6 +34,11 @@ export declare namespace AuthEngineTypes {
     requestId?: string;
     resources?: string[];
   }
+
+  interface RespondParams {
+    id: number;
+    signature: /*CacaoSignature*/ string;
+  }
 }
 
 // TODO: define missing param and data types
@@ -48,7 +53,7 @@ export abstract class IAuthEngine {
     params: AuthEngineTypes.RequestParams,
   ): Promise<{ uri: string; id: number }>;
 
-  public abstract respond(params: /*RespondParams*/ any): Promise<void>;
+  public abstract respond(params: AuthEngineTypes.RespondParams): Promise<void>;
 
   public abstract getPendingRequests(): Promise<Record<number, /*PendingRequest*/ any>>;
 
