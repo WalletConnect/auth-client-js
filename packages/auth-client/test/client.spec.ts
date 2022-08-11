@@ -1,14 +1,22 @@
 import { generateRandomBytes32 } from "@walletconnect/utils";
-import { expect, describe, it, beforeAll, vi } from "vitest";
+import { expect, describe, it, beforeEach, vi } from "vitest";
 import { AuthClient } from "../src/client";
+
+// TODO: Figure out a cleaner way to do this
+const waitForRelay = async () =>
+  await new Promise((resolve) => {
+    setTimeout(() => {
+      resolve({});
+    }, 500);
+  });
 
 describe("AuthClient", () => {
   let client: AuthClient;
   let peer: AuthClient;
 
-  beforeAll(async () => {
+  beforeEach(async () => {
     client = await AuthClient.init({
-      logger: "debug",
+      logger: "error",
       relayUrl: "ws://0.0.0.0:5555",
       projectId: undefined,
       storageOptions: {
@@ -17,7 +25,7 @@ describe("AuthClient", () => {
     });
 
     peer = await AuthClient.init({
-      logger: "debug",
+      logger: "error",
       relayUrl: "ws://0.0.0.0:5555",
       projectId: undefined,
       storageOptions: {
@@ -46,13 +54,7 @@ describe("AuthClient", () => {
 
     await peer.pair({ uri });
 
-    // Give enough time for the message to go through
-    // TODO: Figure out a cleaner way to do this
-    await new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({});
-      }, 1000);
-    });
+    await waitForRelay();
 
     // Ensure they paired
     expect(client.pairing.keys).to.eql(peer.pairing.keys);
@@ -60,5 +62,54 @@ describe("AuthClient", () => {
     // Ensure each client published once (request and respond)
     expect(client.history.records.size).to.eql(peer.history.records.size);
     expect(client.history.records.size).to.eql(1);
+  });
+
+  it("handles incoming auth requests", async () => {
+    peer.on("auth_request", (args) => {
+      console.log("PEER > on auth_request", args);
+      console.log("PENDING:", peer.pendingRequests.keys);
+    });
+    client.on("auth_response", (args) => {
+      console.log("CLIENT > on auth_response", args);
+    });
+
+    const { uri } = await client.request({
+      aud: "http://localhost:3000/login",
+      domain: "localhost:3000",
+      chainId: "chainId",
+      nonce: "nonce",
+    });
+
+    await peer.pair({ uri });
+
+    await waitForRelay();
+
+    expect(peer.pendingRequests.length).to.eql(1);
+  });
+
+  it("handles responses", async () => {
+    let hasResponded = false;
+    peer.on("auth_request", async (args) => {
+      console.log("PEER > on auth_request", args);
+      console.log("PENDING:", peer.pendingRequests.keys);
+      await peer.respond({ id: args.id, signature: "mock signature" });
+    });
+    client.on("auth_response", (args) => {
+      console.log("CLIENT > on auth_response", args);
+      hasResponded = true;
+    });
+
+    const { uri } = await client.request({
+      aud: "http://localhost:3000/login",
+      domain: "localhost:3000",
+      chainId: "chainId",
+      nonce: "nonce",
+    });
+
+    await peer.pair({ uri });
+
+    await waitForRelay();
+
+    expect(hasResponded).to.eql(true);
   });
 });

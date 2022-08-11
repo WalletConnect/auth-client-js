@@ -33,7 +33,8 @@ export abstract class IAuthClient {
   public abstract readonly name: string;
 
   public abstract core: ICore;
-  public abstract authKeys: IStore<string, string>;
+  public abstract authKeys: IStore<string, any>;
+  public abstract pendingRequests: IStore<number, any>;
   public abstract pairing: Pairing;
   public abstract expirer: Expirer;
   public abstract events: EventEmitter;
