@@ -65,14 +65,6 @@ describe("AuthClient", () => {
   });
 
   it("handles incoming auth requests", async () => {
-    peer.on("auth_request", (args) => {
-      console.log("PEER > on auth_request", args);
-      console.log("PENDING:", peer.pendingRequests.keys);
-    });
-    client.on("auth_response", (args) => {
-      console.log("CLIENT > on auth_response", args);
-    });
-
     const { uri } = await client.request({
       aud: "http://localhost:3000/login",
       domain: "localhost:3000",
@@ -90,12 +82,9 @@ describe("AuthClient", () => {
   it("handles responses", async () => {
     let hasResponded = false;
     peer.on("auth_request", async (args) => {
-      console.log("PEER > on auth_request", args);
-      console.log("PENDING:", peer.pendingRequests.keys);
       await peer.respond({ id: args.id, signature: "mock signature" });
     });
     client.on("auth_response", (args) => {
-      console.log("CLIENT > on auth_response", args);
       hasResponded = true;
     });
 

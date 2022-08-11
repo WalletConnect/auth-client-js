@@ -261,8 +261,6 @@ export class AuthEngine extends IAuthEngine {
   // ---------- Relay Event Handlers --------------------------------- //
 
   protected onAuthRequest: IAuthEngine["onAuthRequest"] = async (topic, payload) => {
-    console.log("RELAY: onAuthRequest");
-
     try {
       await this.client.pendingRequests.set(payload.id, payload);
 
