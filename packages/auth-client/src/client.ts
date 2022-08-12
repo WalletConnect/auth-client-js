@@ -27,6 +27,7 @@ export class AuthClient extends IAuthClient {
   public history: IAuthClient["history"];
   public authKeys: IAuthClient["authKeys"];
   public pendingRequests: IAuthClient["pendingRequests"];
+  public address: IAuthClient["address"];
 
   static async init(opts?: Record<string, any>) {
     const client = new AuthClient(opts);
@@ -60,6 +61,7 @@ export class AuthClient extends IAuthClient {
     this.expirer = new Expirer(this.core, this.logger);
     this.engine = new AuthEngine(this);
     this.history = new JsonRpcHistory(this.core, this.logger);
+    this.address = opts?.address;
   }
 
   get context() {

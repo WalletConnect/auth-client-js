@@ -25,8 +25,9 @@ import {
   // getSdkError,
   // isExpired,
 } from "@walletconnect/utils";
+import ethers from "ethers";
 
-import { JsonRpcTypes, IAuthEngine } from "../types";
+import { JsonRpcTypes, IAuthEngine, AuthEngineTypes } from "../types";
 import { /*EXPIRER_EVENTS,*/ AUTH_CLIENT_PUBLIC_KEY_NAME, ENGINE_RPC_OPTS } from "../constants";
 
 export class AuthEngine extends IAuthEngine {
@@ -132,7 +133,9 @@ export class AuthEngine extends IAuthEngine {
       responseTopic,
       {
         payload: {},
-        signature: "signature",
+        // test message
+        signature:
+          "0x6056c39a5bd9702b61789abd4511a76f07014bdfa3c51329650cc4f7ece0dc6328e7aedef9d100bbdc218472faeec570b8c0433c19ec58ea93ce582f1a0383fe1c",
       },
       {
         type: TYPE_1,
@@ -258,16 +261,58 @@ export class AuthEngine extends IAuthEngine {
     }
   };
 
+  // ---------- Helpers ---------------------------------------------- //
+  protected constructEip4361Message = (cacao: AuthEngineTypes.CacaoPayload) => {
+    const header = `${cacao.domain} wants you to sign in with your wallet:`;
+    const walletAddress = cacao.iss;
+    const statement = cacao.statement;
+    const uri = `URI: ${cacao.aud}`;
+    const version = `Version: ${cacao.version}`;
+    const chainId = `Chain ID: ${cacao.chainId}`;
+    const nonce = `Nonce: ${cacao.nonce}`;
+    const issuedAt = `Issued at: ${cacao.iat}`;
+    const resources = `Resources:`;
+
+    const message = [
+      header,
+      walletAddress,
+      "\n",
+      statement,
+      "\n",
+      uri,
+      version,
+      chainId,
+      nonce,
+      issuedAt,
+      resources,
+    ].join("\n");
+
+    return message;
+  };
+
   // ---------- Relay Event Handlers --------------------------------- //
 
   protected onAuthRequest: IAuthEngine["onAuthRequest"] = async (topic, payload) => {
+    const { aud, chainId, domain, version, nonce, iat } = payload.params;
     try {
-      await this.client.pendingRequests.set(payload.id, payload);
+      const fullCacao: AuthEngineTypes.CacaoPayload = {
+        iss: this.client.address,
+        aud,
+        domain,
+        version,
+        nonce,
+        iat,
+        chainId,
+        statement: "",
+      };
+      await this.client.pendingRequests.set(payload.id, fullCacao);
 
       this.client.emit("auth_request", {
         id: payload.id,
-        topic,
-        params: payload.params,
+        topic: "",
+        params: {
+          message: this.constructEip4361Message(fullCacao),
+        },
       });
     } catch (err: any) {
       await this.sendError(payload.id, topic, err);
@@ -277,7 +322,10 @@ export class AuthEngine extends IAuthEngine {
 
   protected onAuthResponse: IAuthEngine["onAuthResponse"] = (topic, payload) => {
     const { id } = payload;
+
     if (isJsonRpcResult(payload)) {
+      const { signature } = payload.result;
+      const address = ethers.utils.verifyMessage("test message", signature);
       this.client.emit("auth_response", { id, topic, params: payload });
     } else if (isJsonRpcError(payload)) {
       this.client.emit("auth_response", { id, topic, params: payload });

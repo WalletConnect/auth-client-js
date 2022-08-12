@@ -35,6 +35,42 @@ export declare namespace AuthEngineTypes {
     resources?: string[];
   }
 
+  interface PayloadParams {
+    type: string; // same as Cacao Header type (t)
+    chainId: string;
+    domain: string;
+    aud: string;
+    version: string;
+    nonce: string;
+    iat: string;
+    nbf?: string;
+    exp?: string;
+    statement?: string;
+    requestId?: string;
+    resources?: string[];
+  }
+
+  interface CacaoPayload {
+    iss: string;
+    domain: string;
+    aud: string;
+    version: string;
+    nonce: string;
+    chainId: string;
+    iat: string;
+    nbf?: string;
+    exp?: string;
+    statement?: string;
+    requestId?: string;
+    resources?: string[];
+  }
+
+  interface PendingRequest {
+    id: number;
+    payloadParams: PayloadParams;
+    message: string;
+  }
+
   interface RespondParams {
     id: number;
     signature: /*CacaoSignature*/ string;
@@ -101,10 +137,13 @@ export abstract class IAuthEngine {
 
   // ---------- Protected Relay Event Handlers --------------------------------- //
 
-  protected abstract onAuthRequest(topic: string, payload: JsonRpcRequest<any>): Promise<void>;
+  protected abstract onAuthRequest(
+    topic: string,
+    payload: JsonRpcRequest<AuthEngineTypes.PayloadParams>,
+  ): Promise<void>;
 
   protected abstract onAuthResponse(
     topic: string,
-    payload: JsonRpcResult<boolean> | JsonRpcError,
+    payload: JsonRpcResult<AuthEngineTypes.RespondParams> | JsonRpcError,
   ): void;
 }
