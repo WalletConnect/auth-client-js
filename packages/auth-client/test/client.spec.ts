@@ -23,7 +23,6 @@ describe("AuthClient", () => {
       storageOptions: {
         database: ":memory:",
       },
-      iss: "did:pkh:eip155:0xdE80F109b4923415655274dADB17b73876861c56",
     });
 
     peer = await AuthClient.init({
@@ -33,6 +32,7 @@ describe("AuthClient", () => {
       storageOptions: {
         database: ":memory:",
       },
+      iss: "did:pkh:eip155:1:0xdE80F109b4923415655274dADB17b73876861c56",
     });
   });
 

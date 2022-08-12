@@ -116,7 +116,6 @@ export class AuthEngine extends IAuthEngine {
       aud,
       domain,
       version: "1",
-      iss: this.client.address,
       nonce,
       requester: { publicKey },
     });
@@ -299,16 +298,16 @@ export class AuthEngine extends IAuthEngine {
   // ---------- Relay Event Handlers --------------------------------- //
 
   protected onAuthRequest: IAuthEngine["onAuthRequest"] = async (topic, payload) => {
-    const { requester, iss, aud, domain, version, nonce } = payload.params;
+    const { requester, statement, aud, domain, version, nonce } = payload.params;
     try {
       const fullCacao: AuthEngineTypes.CacaoPayload = {
-        iss,
+        iss: this.client.address,
         aud,
         domain,
         version,
         nonce,
         iat: new Date().toISOString(),
-        statement: "",
+        statement,
       };
 
       await this.client.pendingRequests.set(payload.id, {
