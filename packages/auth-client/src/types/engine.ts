@@ -68,10 +68,20 @@ export declare namespace AuthEngineTypes {
     resources?: string[];
   }
 
+  interface CacaoHeader {
+    t: string;
+  }
+
+  interface CacaoSignature {
+    t: string;
+    s: string;
+    m?: any;
+  }
+
   interface Cacao {
     header: any;
     payload: CacaoPayload;
-    signature: string;
+    signature: CacaoSignature;
   }
 
   interface PendingRequest {
@@ -82,7 +92,7 @@ export declare namespace AuthEngineTypes {
 
   interface RespondParams {
     id: number;
-    signature: /*CacaoSignature*/ string;
+    signature: CacaoSignature;
   }
 }
 

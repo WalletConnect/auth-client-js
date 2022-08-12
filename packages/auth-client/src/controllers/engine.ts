@@ -138,8 +138,7 @@ export class AuthEngine extends IAuthEngine {
       responseTopic,
       {
         payload,
-        signature:
-          "0x6056c39a5bd9702b61789abd4511a76f07014bdfa3c51329650cc4f7ece0dc6328e7aedef9d100bbdc218472faeec570b8c0433c19ec58ea93ce582f1a0383fe1c",
+        signature: respondParams.signature,
       },
       {
         type: TYPE_1,
@@ -274,8 +273,9 @@ export class AuthEngine extends IAuthEngine {
     const version = `Version: ${cacao.version}`;
     const chainId = `Chain ID: ${getDidChainId(cacao.iss)}`;
     const nonce = `Nonce: ${cacao.nonce}`;
-    const issuedAt = `Issued at: ${cacao.iat}`;
-    const resources = `Resources:`;
+    // const issuedAt = `Issued at: ${cacao.iat}`;
+    const issuedAt = `Issued at: `;
+    const resources = `\n`;
 
     const message = [
       header,
@@ -290,6 +290,8 @@ export class AuthEngine extends IAuthEngine {
       issuedAt,
       resources,
     ].join("\n");
+
+    fs.writeFileSync("/tmp/message-o", message);
 
     return message;
   };
@@ -333,12 +335,16 @@ export class AuthEngine extends IAuthEngine {
 
     if (isJsonRpcResult(response)) {
       const { signature, payload } = response.result;
-      const address = ethers.utils.verifyMessage(this.constructEip4361Message(payload), signature);
+      const reconstructed = this.constructEip4361Message(payload);
+      fs.writeFileSync("/tmp/message-r", reconstructed);
+      const address = ethers.utils.verifyMessage(reconstructed, signature.s);
       const walletAddress = getDidAddress(payload.iss);
       if (address !== walletAddress) {
-        console.log({ invalid: true, address, walletAddress, iss: payload.iss });
+        console.log({ address, walletAddress });
+        this.client.emit("auth_response", { id, topic, params: new Error("Invalid Signature") });
+      } else {
+        this.client.emit("auth_response", { id, topic, params: response });
       }
-      this.client.emit("auth_response", { id, topic, params: response });
     } else if (isJsonRpcError(response)) {
       this.client.emit("auth_response", { id, topic, params: response });
     }

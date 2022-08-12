@@ -83,13 +83,21 @@ describe("AuthClient", () => {
 
   it("handles responses", async () => {
     let hasResponded = false;
+    let successfulResponse = false;
     peer.on("auth_request", async (args) => {
       const signature =
-        "0x5441969d62b8379ddd7bb5a3516e00a74c7662e07f94a52c15fb4f63435515db239613496c91e552f6e4e1e1240012ce6cd048d60f8fcd0dc392f493c22bbdad1b";
-      await peer.respond({ id: args.id, signature } as any);
+        "0x09088b6230b7c1295b703cec3afbbd65e06b7d32e122454d544f6ea3b387566616bd76b854c7bc3bf1ea8534bf69029f97dc5e84d54953aff203bb8b70b3c01e1c";
+      await peer.respond({
+        id: args.id,
+        signature: {
+          s: signature,
+          t: "eip191",
+        },
+      });
     });
 
     client.on("auth_response", (args) => {
+      successfulResponse = !(args.params instanceof Error);
       hasResponded = true;
     });
 
@@ -105,5 +113,6 @@ describe("AuthClient", () => {
     await waitForRelay();
 
     expect(hasResponded).to.eql(true);
+    expect(successfulResponse).to.eql(true);
   });
 });
