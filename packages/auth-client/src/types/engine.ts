@@ -37,7 +37,25 @@ export declare namespace AuthEngineTypes {
 
   interface PayloadParams {
     type: string; // same as Cacao Header type (t)
+    iss: string;
     chainId: string;
+    domain: string;
+    aud: string;
+    version: string;
+    nonce: string;
+    iat: string;
+    nbf?: string;
+    exp?: string;
+    statement?: string;
+    requestId?: string;
+    resources?: string[];
+    requester: {
+      publicKey: string;
+    };
+  }
+
+  interface CacaoPayload {
+    iss: string;
     domain: string;
     aud: string;
     version: string;
@@ -50,19 +68,10 @@ export declare namespace AuthEngineTypes {
     resources?: string[];
   }
 
-  interface CacaoPayload {
-    iss: string;
-    domain: string;
-    aud: string;
-    version: string;
-    nonce: string;
-    chainId: string;
-    iat: string;
-    nbf?: string;
-    exp?: string;
-    statement?: string;
-    requestId?: string;
-    resources?: string[];
+  interface Cacao {
+    header: any;
+    payload: CacaoPayload;
+    signature: string;
   }
 
   interface PendingRequest {
@@ -144,6 +153,6 @@ export abstract class IAuthEngine {
 
   protected abstract onAuthResponse(
     topic: string,
-    payload: JsonRpcResult<AuthEngineTypes.RespondParams> | JsonRpcError,
+    payload: JsonRpcResult<AuthEngineTypes.Cacao> | JsonRpcError,
   ): void;
 }

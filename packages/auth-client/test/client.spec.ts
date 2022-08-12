@@ -1,5 +1,6 @@
 import { generateRandomBytes32 } from "@walletconnect/utils";
 import { expect, describe, it, beforeEach, vi } from "vitest";
+import ethers from "ethers";
 import { AuthClient } from "../src/client";
 
 // TODO: Figure out a cleaner way to do this
@@ -7,7 +8,7 @@ const waitForRelay = async () =>
   await new Promise((resolve) => {
     setTimeout(() => {
       resolve({});
-    }, 500);
+    }, 1000);
   });
 
 describe("AuthClient", () => {
@@ -22,6 +23,7 @@ describe("AuthClient", () => {
       storageOptions: {
         database: ":memory:",
       },
+      iss: "did:pkh:eip155:0xdE80F109b4923415655274dADB17b73876861c56",
     });
 
     peer = await AuthClient.init({
@@ -82,8 +84,11 @@ describe("AuthClient", () => {
   it("handles responses", async () => {
     let hasResponded = false;
     peer.on("auth_request", async (args) => {
-      await peer.respond({ id: args.id, signature: "mock signature" });
+      const signature =
+        "0x5441969d62b8379ddd7bb5a3516e00a74c7662e07f94a52c15fb4f63435515db239613496c91e552f6e4e1e1240012ce6cd048d60f8fcd0dc392f493c22bbdad1b";
+      await peer.respond({ id: args.id, signature } as any);
     });
+
     client.on("auth_response", (args) => {
       hasResponded = true;
     });
