@@ -29,7 +29,6 @@ import ethers from "ethers";
 import { JsonRpcTypes, IAuthEngine, AuthEngineTypes } from "../types";
 import { /*EXPIRER_EVENTS,*/ AUTH_CLIENT_PUBLIC_KEY_NAME, ENGINE_RPC_OPTS } from "../constants";
 import { getDidAddress, getDidAddressSegments, getDidChainId } from "../utils/address";
-import fs from "fs";
 
 export class AuthEngine extends IAuthEngine {
   private events = new EventEmitter();
@@ -290,8 +289,6 @@ export class AuthEngine extends IAuthEngine {
       resources,
     ].join("\n");
 
-    fs.writeFileSync("/tmp/message-o", message);
-
     return message;
   };
 
@@ -335,11 +332,9 @@ export class AuthEngine extends IAuthEngine {
     if (isJsonRpcResult(response)) {
       const { signature, payload } = response.result;
       const reconstructed = this.constructEip4361Message(payload);
-      fs.writeFileSync("/tmp/message-r", reconstructed);
       const address = ethers.utils.verifyMessage(reconstructed, signature.s);
       const walletAddress = getDidAddress(payload.iss);
       if (address !== walletAddress) {
-        console.log({ address, walletAddress });
         this.client.emit("auth_response", { id, topic, params: new Error("Invalid Signature") });
       } else {
         this.client.emit("auth_response", { id, topic, params: response });
