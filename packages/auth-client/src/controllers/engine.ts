@@ -144,7 +144,7 @@ export class AuthEngine extends IAuthEngine {
       payload.id,
       responseTopic,
       {
-        payload,
+        payload: payload.payloadParams,
         signature: respondParams.signature,
       },
       {
@@ -361,6 +361,8 @@ export class AuthEngine extends IAuthEngine {
       const reconstructed = this.constructEip4361Message(payload);
       const address = ethers.utils.verifyMessage(reconstructed, signature.s);
       const walletAddress = getDidAddress(payload.iss);
+
+      console.log({ payload });
 
       if (address !== walletAddress) {
         this.client.emit("auth_response", { id, topic, params: new Error("Invalid Signature") });
