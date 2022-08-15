@@ -22,7 +22,7 @@ import {
   isExpired,
   getSdkError,
 } from "@walletconnect/utils";
-import ethers from "ethers";
+import { utils } from "ethers";
 import { JsonRpcTypes, IAuthEngine, AuthEngineTypes } from "../types";
 import { EXPIRER_EVENTS, AUTH_CLIENT_PUBLIC_KEY_NAME, ENGINE_RPC_OPTS } from "../constants";
 import { getDidAddress, getDidChainId } from "../utils/address";
@@ -352,7 +352,7 @@ export class AuthEngine extends IAuthEngine {
     if (isJsonRpcResult(response)) {
       const { signature, payload } = response.result;
       const reconstructed = this.constructEip4361Message(payload);
-      const address = ethers.utils.verifyMessage(reconstructed, signature.s);
+      const address = utils.verifyMessage(reconstructed, signature.s);
       const walletAddress = getDidAddress(payload.iss);
 
       if (address !== walletAddress) {
