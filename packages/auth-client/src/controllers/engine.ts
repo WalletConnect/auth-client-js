@@ -61,7 +61,7 @@ export class AuthEngine extends IAuthEngine {
     // this.isValidPair(params);
     const { topic, symKey, relay } = parseUri(params.uri);
     const expiry = calcExpiry(FIVE_MINUTES);
-    const pairing = { relay, expiry, active: false };
+    const pairing = { relay, expiry, active: true };
     await this.client.pairing.set(topic, {
       topic,
       ...pairing,
