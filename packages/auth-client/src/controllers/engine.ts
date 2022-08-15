@@ -1,4 +1,3 @@
-import EventEmitter from "events";
 import { RELAYER_EVENTS, RELAYER_DEFAULT_PROTOCOL } from "@walletconnect/core";
 import {
   formatJsonRpcRequest,
@@ -10,11 +9,7 @@ import {
   isJsonRpcError,
 } from "@walletconnect/jsonrpc-utils";
 import { FIVE_MINUTES, FOUR_WEEKS } from "@walletconnect/time";
-import {
-  ExpirerTypes,
-  RelayerTypes,
-  /*ExpirerTypes,*/
-} from "@walletconnect/types";
+import { ExpirerTypes, RelayerTypes } from "@walletconnect/types";
 import {
   calcExpiry,
   formatUri,
@@ -26,8 +21,6 @@ import {
   parseExpirerTarget,
   isExpired,
   getSdkError,
-  // getSdkError,
-  // isExpired,
 } from "@walletconnect/utils";
 import ethers from "ethers";
 import { JsonRpcTypes, IAuthEngine, AuthEngineTypes } from "../types";
@@ -35,7 +28,6 @@ import { EXPIRER_EVENTS, AUTH_CLIENT_PUBLIC_KEY_NAME, ENGINE_RPC_OPTS } from "..
 import { getDidAddress, getDidChainId } from "../utils/address";
 
 export class AuthEngine extends IAuthEngine {
-  private events = new EventEmitter();
   private initialized = false;
   public name = "authEngine";
 
@@ -54,7 +46,6 @@ export class AuthEngine extends IAuthEngine {
 
   // ---------- Public ------------------------------------------------ //
 
-  // TODO: taken as-is from Sign, needs review
   public pair: IAuthEngine["pair"] = async (params) => {
     this.isInitialized();
     // TODO: Check this out after happy path is complete
@@ -74,8 +65,7 @@ export class AuthEngine extends IAuthEngine {
     return pairing;
   };
 
-  // TODO: taken as-is from Sign, needs review
-  public request: IAuthEngine["request"] = async <T>(params: AuthEngineTypes.PayloadParams) => {
+  public request: IAuthEngine["request"] = async (params: AuthEngineTypes.PayloadParams) => {
     this.isInitialized();
     // await this.isValidRequest(params);
 
@@ -371,7 +361,7 @@ export class AuthEngine extends IAuthEngine {
 
   private registerExpirerEvents() {
     this.client.expirer.on(EXPIRER_EVENTS.expired, async (event: ExpirerTypes.Expiration) => {
-      const { topic, id } = parseExpirerTarget(event.target);
+      const { topic } = parseExpirerTarget(event.target);
       if (topic) {
         if (this.client.pairing.keys.includes(topic)) {
           await this.deletePairing(topic);
