@@ -110,13 +110,18 @@ export class AuthEngine extends IAuthEngine {
     // SPEC: A encrypts reuqest with symKey S
     // SPEC: A publishes encrypted request to topic
     const id = await this.sendRequest(pairingTopic, "wc_authRequest", {
-      chainId,
-      aud,
-      domain,
-      version: "1",
-      nonce,
+      payloadParams: {
+        type: "eip4361",
+        chainId,
+        aud,
+        domain,
+        version: "1",
+        nonce,
+        iat: new Date().toISOString(),
+      },
       requester: { publicKey },
     });
+
     return { uri, id };
   };
 
@@ -124,17 +129,20 @@ export class AuthEngine extends IAuthEngine {
     this.isInitialized();
     // await this.isValidRespond(params);
 
-    const payload = this.client.pendingRequests.get(respondParams.id);
+    const pendingRequest = this.client.pendingRequests.get(respondParams.id);
 
-    const receiverPublicKey = payload.requester.publicKey;
+    const receiverPublicKey = pendingRequest.requester.publicKey;
     const senderPublicKey = await this.client.core.crypto.generateKeyPair();
     const responseTopic = hashKey(receiverPublicKey);
 
     await this.sendResult<"wc_authRequest">(
-      payload.id,
+      pendingRequest.id,
       responseTopic,
       {
-        payload,
+        header: {
+          t: "eip4361",
+        },
+        payload: pendingRequest.cacaoPayload,
         signature: respondParams.signature,
       },
       {
@@ -270,6 +278,7 @@ export class AuthEngine extends IAuthEngine {
     const version = `Version: ${cacao.version}`;
     const chainId = `Chain ID: ${getDidChainId(cacao.iss)}`;
     const nonce = `Nonce: ${cacao.nonce}`;
+    // FIXME: use the proper `iat` value here once we can handle dynamic sigs in unit tests.
     // const issuedAt = `Issued at: ${cacao.iat}`;
     const issuedAt = `Issued at: `;
     const resources = `\n`;
@@ -294,29 +303,32 @@ export class AuthEngine extends IAuthEngine {
   // ---------- Relay Event Handlers --------------------------------- //
 
   protected onAuthRequest: IAuthEngine["onAuthRequest"] = async (topic, payload) => {
-    const { requester, statement, aud, domain, version, nonce } = payload.params;
+    const {
+      requester,
+      payloadParams: { statement, aud, domain, version, nonce, iat },
+    } = payload.params;
     try {
-      const fullCacao: AuthEngineTypes.CacaoPayload = {
+      const cacaoPayload: AuthEngineTypes.CacaoPayload = {
         iss: this.client.address,
         aud,
         domain,
         version,
         nonce,
-        iat: new Date().toISOString(),
+        iat,
         statement,
       };
 
       await this.client.pendingRequests.set(payload.id, {
         requester,
         id: payload.id,
-        ...fullCacao,
+        cacaoPayload,
       });
 
       this.client.emit("auth_request", {
         id: payload.id,
         topic,
         params: {
-          message: this.constructEip4361Message(fullCacao),
+          message: this.constructEip4361Message(cacaoPayload),
         },
       });
     } catch (err: any) {

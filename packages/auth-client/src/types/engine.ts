@@ -36,8 +36,7 @@ export declare namespace AuthEngineTypes {
   }
 
   interface PayloadParams {
-    type: string; // same as Cacao Header type (t)
-    iss: string;
+    type: CacaoHeader["t"];
     chainId: string;
     domain: string;
     aud: string;
@@ -49,9 +48,6 @@ export declare namespace AuthEngineTypes {
     statement?: string;
     requestId?: string;
     resources?: string[];
-    requester: {
-      publicKey: string;
-    };
   }
 
   interface CacaoPayload {
@@ -69,17 +65,17 @@ export declare namespace AuthEngineTypes {
   }
 
   interface CacaoHeader {
-    t: string;
+    t: "eip4361";
   }
 
   interface CacaoSignature {
-    t: string;
+    t: "eip191";
     s: string;
     m?: any;
   }
 
   interface Cacao {
-    header: any;
+    header: CacaoHeader;
     payload: CacaoPayload;
     signature: CacaoSignature;
   }
@@ -119,17 +115,14 @@ export abstract class IAuthEngine {
   protected abstract sendRequest<M extends JsonRpcTypes.WcMethod>(
     topic: string,
     method: M,
-    // params: JsonRpcTypes.RequestParams[M]
-    params: any,
+    params: JsonRpcTypes.RequestParams[M],
     encodeOpts?: CryptoTypes.EncodeOptions,
   ): Promise<number>;
 
-  // @ts-expect-error - needs Results interface
   protected abstract sendResult<M extends JsonRpcTypes.WcMethod>(
     id: number,
     topic: string,
-    // result: JsonRpcTypes.Results[M]
-    result: any,
+    result: JsonRpcTypes.Results[M],
     encodeOpts?: CryptoTypes.EncodeOptions,
   ): Promise<void>;
 
@@ -158,11 +151,11 @@ export abstract class IAuthEngine {
 
   protected abstract onAuthRequest(
     topic: string,
-    payload: JsonRpcRequest<AuthEngineTypes.PayloadParams>,
+    payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_authRequest"]>,
   ): Promise<void>;
 
   protected abstract onAuthResponse(
     topic: string,
-    payload: JsonRpcResult<AuthEngineTypes.Cacao> | JsonRpcError,
+    payload: JsonRpcResult<JsonRpcTypes.Results["wc_authRequest"]> | JsonRpcError,
   ): void;
 }
