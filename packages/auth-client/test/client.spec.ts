@@ -1,16 +1,16 @@
 import { generateRandomBytes32 } from "@walletconnect/utils";
-import { expect, describe, it, beforeEach, vi } from "vitest";
+import { expect, describe, it, beforeEach, vi, afterEach } from "vitest";
 import ethers from "ethers";
 import { AuthClient } from "../src/client";
-import time from "@walletconnect/time";
 
 // TODO: Figure out a cleaner way to do this
-const waitForRelay = async (waitTimeOverride?: number) =>
+const waitForRelay = async (waitTimeOverride?: number) => {
   await new Promise((resolve) => {
     setTimeout(() => {
       resolve({});
     }, waitTimeOverride ?? 500);
   });
+};
 
 describe("AuthClient", () => {
   let client: AuthClient;
@@ -21,7 +21,7 @@ describe("AuthClient", () => {
   // expiry logic
   vi.mock("@walletconnect/time", async () => {
     const constants: Record<string, any> = await vi.importActual("@walletconnect/time");
-    return { ...constants, FIVE_MINUTES: constants.FIVE_SECONDS };
+    return { ...constants, FIVE_MINUTES: 2 };
   });
 
   beforeEach(async () => {
@@ -118,9 +118,14 @@ describe("AuthClient", () => {
       nonce: "nonce",
     });
 
+    expect(client.pairing.values.length).to.eql(1);
+    expect(client.pairing.values[0].active).to.eql(false);
+
     await peer.pair({ uri });
 
     await waitForRelay();
+
+    expect(client.pairing.values[0].active).to.eql(true);
 
     expect(hasResponded).to.eql(true);
     expect(successfulResponse).to.eql(true);
@@ -152,9 +157,10 @@ describe("AuthClient", () => {
 
     expect(client.pairing.keys).to.eql(peer.pairing.keys);
     expect(peer.pairing.keys.length).to.eql(1);
-    expect(peer.pairing.values[0].active).to.eql(true);
 
     await waitForRelay(5000);
+
     expect(peer.pairing.keys.length).to.eql(0);
+    expect(client.pairing.keys.length).to.eql(0);
   });
 });

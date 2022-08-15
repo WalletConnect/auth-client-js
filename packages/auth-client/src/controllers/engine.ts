@@ -9,7 +9,7 @@ import {
   isJsonRpcResult,
   isJsonRpcError,
 } from "@walletconnect/jsonrpc-utils";
-import { FIVE_MINUTES } from "@walletconnect/time";
+import { FIVE_MINUTES, FOUR_WEEKS } from "@walletconnect/time";
 import {
   ExpirerTypes,
   RelayerTypes,
@@ -61,7 +61,7 @@ export class AuthEngine extends IAuthEngine {
     // this.isValidPair(params);
     const { topic, symKey, relay } = parseUri(params.uri);
     const expiry = calcExpiry(FIVE_MINUTES);
-    const pairing = { relay, expiry, active: true };
+    const pairing = { relay, expiry, active: false };
     await this.client.pairing.set(topic, {
       topic,
       ...pairing,
@@ -89,7 +89,7 @@ export class AuthEngine extends IAuthEngine {
     const relay = { protocol: RELAYER_DEFAULT_PROTOCOL };
 
     // Preparing pairing URI
-    const pairing = { topic: pairingTopic, expiry, relay, active: true };
+    const pairing = { topic: pairingTopic, expiry, relay, active: false };
     const uri = formatUri({
       protocol: this.client.protocol,
       version: this.client.version,
@@ -97,11 +97,16 @@ export class AuthEngine extends IAuthEngine {
       symKey,
       relay,
     });
-    await this.client.pairing.set(pairingTopic, pairing);
+
+    this.client.pairing.set(pairingTopic, pairing);
+
+    this.setExpiry(pairingTopic, expiry);
 
     // SPEC: A generates keyPair X and generates response topic
     const publicKey = await this.client.core.crypto.generateKeyPair();
     const responseTopic = hashKey(publicKey);
+
+    await this.client.pairingTopics.set(responseTopic, { pairingTopic });
 
     this.client.authKeys.set(AUTH_CLIENT_PUBLIC_KEY_NAME, publicKey);
 
@@ -333,11 +338,19 @@ export class AuthEngine extends IAuthEngine {
   protected onAuthResponse: IAuthEngine["onAuthResponse"] = (topic, response) => {
     const { id } = response;
 
+    const { pairingTopic } = this.client.pairingTopics.get(topic);
+
+    this.client.pairing.update(pairingTopic, {
+      active: true,
+      expiry: calcExpiry(FOUR_WEEKS),
+    });
+
     if (isJsonRpcResult(response)) {
       const { signature, payload } = response.result;
       const reconstructed = this.constructEip4361Message(payload);
       const address = ethers.utils.verifyMessage(reconstructed, signature.s);
       const walletAddress = getDidAddress(payload.iss);
+
       if (address !== walletAddress) {
         this.client.emit("auth_response", { id, topic, params: new Error("Invalid Signature") });
       } else {
