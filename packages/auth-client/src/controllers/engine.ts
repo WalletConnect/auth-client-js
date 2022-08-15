@@ -160,7 +160,12 @@ export class AuthEngine extends IAuthEngine {
     return await Promise.resolve(pendingRequests);
   };
 
-  public getRequest: IAuthEngine["getRequest"] = async () => await Promise.resolve({});
+  // TODO: Figure out how this is returning a full Cacao object,
+  // while `getPendingRequests` returns pendingRequests
+  public getRequest: IAuthEngine["getRequest"] = async ({ id }) => {
+    const request = this.client.pendingRequests.get(id);
+    return await Promise.resolve(request);
+  };
 
   // ---------- Private Helpers --------------------------------------- //
 
