@@ -16,6 +16,9 @@ describe("AuthClient", () => {
   let client: AuthClient;
   let peer: AuthClient;
 
+  // Mocking five minutes to be five seconds to test expiry.
+  // Modified constant instead of functions to be as close as possible to actual
+  // expiry logic
   vi.mock("@walletconnect/time", async () => {
     const constants: Record<string, any> = await vi.importActual("@walletconnect/time");
     return { ...constants, FIVE_MINUTES: constants.FIVE_SECONDS };
