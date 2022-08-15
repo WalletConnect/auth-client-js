@@ -30,15 +30,14 @@
     "test": "npm run test:pre; npm run test:run"
   },
   "dependencies": {
-    "@walletconnect/core": "^2.0.0-rc.1",
+    "@walletconnect/core": "2.0.0-rc.2",
     "@walletconnect/events": "1.0.0",
     "@walletconnect/heartbeat": "1.0.0",
     "@walletconnect/jsonrpc-provider": "1.0.5",
     "@walletconnect/jsonrpc-utils": "1.0.3",
     "@walletconnect/logger": "1.0.1",
     "@walletconnect/time": "1.0.1",
-    "@walletconnect/types": "^2.0.0-rc.1",
-    "@walletconnect/utils": "^2.0.0-rc.1",
+    "@walletconnect/utils": "2.0.0-rc.2",
     "ethers": "^5.6.9",
     "events": "^3.3.0",
     "pino": "6.7.0",
@@ -47,6 +46,7 @@
   "devDependencies": {
     "@walletconnect/jsonrpc-ws-connection": "1.0.3",
     "@walletconnect/relay-api": "1.0.6",
+    "@walletconnect/types": "2.0.0-rc.2",
     "aws-sdk": "^2.1169.0",
     "better-sqlite3": "7.6.2"
   }
