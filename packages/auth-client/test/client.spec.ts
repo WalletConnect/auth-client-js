@@ -107,7 +107,7 @@ describe("AuthClient", () => {
     });
 
     client.on("auth_response", (args) => {
-      successfulResponse = args.params.result.signature !== undefined;
+      successfulResponse = Boolean(args.params.result?.signature);
       hasResponded = true;
     });
 
