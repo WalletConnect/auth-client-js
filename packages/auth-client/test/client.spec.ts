@@ -1,5 +1,6 @@
 import { generateRandomBytes32 } from "@walletconnect/utils";
 import { expect, describe, it, beforeEach, vi } from "vitest";
+import ethers from "ethers";
 import { AuthClient } from "../src/client";
 
 // TODO: Figure out a cleaner way to do this
@@ -7,7 +8,7 @@ const waitForRelay = async () =>
   await new Promise((resolve) => {
     setTimeout(() => {
       resolve({});
-    }, 500);
+    }, 1000);
   });
 
 describe("AuthClient", () => {
@@ -31,6 +32,7 @@ describe("AuthClient", () => {
       storageOptions: {
         database: ":memory:",
       },
+      iss: "did:pkh:eip155:1:0xdE80F109b4923415655274dADB17b73876861c56",
     });
   });
 
@@ -81,10 +83,21 @@ describe("AuthClient", () => {
 
   it("handles responses", async () => {
     let hasResponded = false;
+    let successfulResponse = false;
     peer.on("auth_request", async (args) => {
-      await peer.respond({ id: args.id, signature: "mock signature" });
+      const signature =
+        "0x09088b6230b7c1295b703cec3afbbd65e06b7d32e122454d544f6ea3b387566616bd76b854c7bc3bf1ea8534bf69029f97dc5e84d54953aff203bb8b70b3c01e1c";
+      await peer.respond({
+        id: args.id,
+        signature: {
+          s: signature,
+          t: "eip191",
+        },
+      });
     });
+
     client.on("auth_response", (args) => {
+      successfulResponse = !(args.params instanceof Error);
       hasResponded = true;
     });
 
@@ -100,5 +113,6 @@ describe("AuthClient", () => {
     await waitForRelay();
 
     expect(hasResponded).to.eql(true);
+    expect(successfulResponse).to.eql(true);
   });
 });

@@ -25,9 +25,10 @@ import {
   // getSdkError,
   // isExpired,
 } from "@walletconnect/utils";
-
-import { JsonRpcTypes, IAuthEngine } from "../types";
+import ethers from "ethers";
+import { JsonRpcTypes, IAuthEngine, AuthEngineTypes } from "../types";
 import { /*EXPIRER_EVENTS,*/ AUTH_CLIENT_PUBLIC_KEY_NAME, ENGINE_RPC_OPTS } from "../constants";
+import { getDidAddress, getDidAddressSegments, getDidChainId } from "../utils/address";
 
 export class AuthEngine extends IAuthEngine {
   private events = new EventEmitter();
@@ -70,7 +71,7 @@ export class AuthEngine extends IAuthEngine {
   };
 
   // TODO: taken as-is from Sign, needs review
-  public request: IAuthEngine["request"] = async <T>(params: any) => {
+  public request: IAuthEngine["request"] = async <T>(params: AuthEngineTypes.PayloadParams) => {
     this.isInitialized();
     // await this.isValidRequest(params);
 
@@ -105,13 +106,16 @@ export class AuthEngine extends IAuthEngine {
 
     // SPEC: A will construct an authentication request.
     // TODO: Fill out the rest of the properties here
-    const { chainId, request } = params;
+    const { chainId, aud, domain, nonce } = params;
 
     // SPEC: A encrypts reuqest with symKey S
     // SPEC: A publishes encrypted request to topic
     const id = await this.sendRequest(pairingTopic, "wc_authRequest", {
-      request,
       chainId,
+      aud,
+      domain,
+      version: "1",
+      nonce,
       requester: { publicKey },
     });
     return { uri, id };
@@ -123,7 +127,7 @@ export class AuthEngine extends IAuthEngine {
 
     const payload = this.client.pendingRequests.get(respondParams.id);
 
-    const receiverPublicKey = payload.params.requester.publicKey;
+    const receiverPublicKey = payload.requester.publicKey;
     const senderPublicKey = await this.client.core.crypto.generateKeyPair();
     const responseTopic = hashKey(receiverPublicKey);
 
@@ -131,8 +135,8 @@ export class AuthEngine extends IAuthEngine {
       payload.id,
       responseTopic,
       {
-        payload: {},
-        signature: "signature",
+        payload,
+        signature: respondParams.signature,
       },
       {
         type: TYPE_1,
@@ -258,16 +262,63 @@ export class AuthEngine extends IAuthEngine {
     }
   };
 
+  // ---------- Helpers ---------------------------------------------- //
+  protected constructEip4361Message = (cacao: AuthEngineTypes.CacaoPayload) => {
+    const header = `${cacao.domain} wants you to sign in with your wallet:`;
+    const walletAddress = getDidAddress(cacao.iss);
+    const statement = cacao.statement;
+    const uri = `URI: ${cacao.aud}`;
+    const version = `Version: ${cacao.version}`;
+    const chainId = `Chain ID: ${getDidChainId(cacao.iss)}`;
+    const nonce = `Nonce: ${cacao.nonce}`;
+    // const issuedAt = `Issued at: ${cacao.iat}`;
+    const issuedAt = `Issued at: `;
+    const resources = `\n`;
+
+    const message = [
+      header,
+      walletAddress,
+      "\n",
+      statement,
+      "\n",
+      uri,
+      version,
+      chainId,
+      nonce,
+      issuedAt,
+      resources,
+    ].join("\n");
+
+    return message;
+  };
+
   // ---------- Relay Event Handlers --------------------------------- //
 
   protected onAuthRequest: IAuthEngine["onAuthRequest"] = async (topic, payload) => {
+    const { requester, statement, aud, domain, version, nonce } = payload.params;
     try {
-      await this.client.pendingRequests.set(payload.id, payload);
+      const fullCacao: AuthEngineTypes.CacaoPayload = {
+        iss: this.client.address,
+        aud,
+        domain,
+        version,
+        nonce,
+        iat: new Date().toISOString(),
+        statement,
+      };
+
+      await this.client.pendingRequests.set(payload.id, {
+        requester,
+        id: payload.id,
+        ...fullCacao,
+      });
 
       this.client.emit("auth_request", {
         id: payload.id,
         topic,
-        params: payload.params,
+        params: {
+          message: this.constructEip4361Message(fullCacao),
+        },
       });
     } catch (err: any) {
       await this.sendError(payload.id, topic, err);
@@ -275,12 +326,21 @@ export class AuthEngine extends IAuthEngine {
     }
   };
 
-  protected onAuthResponse: IAuthEngine["onAuthResponse"] = (topic, payload) => {
-    const { id } = payload;
-    if (isJsonRpcResult(payload)) {
-      this.client.emit("auth_response", { id, topic, params: payload });
-    } else if (isJsonRpcError(payload)) {
-      this.client.emit("auth_response", { id, topic, params: payload });
+  protected onAuthResponse: IAuthEngine["onAuthResponse"] = (topic, response) => {
+    const { id } = response;
+
+    if (isJsonRpcResult(response)) {
+      const { signature, payload } = response.result;
+      const reconstructed = this.constructEip4361Message(payload);
+      const address = ethers.utils.verifyMessage(reconstructed, signature.s);
+      const walletAddress = getDidAddress(payload.iss);
+      if (address !== walletAddress) {
+        this.client.emit("auth_response", { id, topic, params: new Error("Invalid Signature") });
+      } else {
+        this.client.emit("auth_response", { id, topic, params: response });
+      }
+    } else if (isJsonRpcError(response)) {
+      this.client.emit("auth_response", { id, topic, params: response });
     }
   };
 
