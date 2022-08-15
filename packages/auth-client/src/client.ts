@@ -26,6 +26,7 @@ export class AuthClient extends IAuthClient {
   public expirer: IAuthClient["expirer"];
   public history: IAuthClient["history"];
   public authKeys: IAuthClient["authKeys"];
+  public pairingTopics: IAuthClient["pairingTopics"];
   public pendingRequests: IAuthClient["pendingRequests"];
   public address: IAuthClient["address"];
 
@@ -51,6 +52,12 @@ export class AuthClient extends IAuthClient {
     this.core = opts?.core || new Core(opts);
     this.logger = generateChildLogger(logger, this.name);
     this.authKeys = new Store(this.core, this.logger, "authKeys", AUTH_CLIENT_STORAGE_PREFIX);
+    this.pairingTopics = new Store(
+      this.core,
+      this.logger,
+      "pairingTopics",
+      AUTH_CLIENT_STORAGE_PREFIX,
+    );
     this.pendingRequests = new Store(
       this.core,
       this.logger,
@@ -149,6 +156,7 @@ export class AuthClient extends IAuthClient {
       await this.pairing.init();
       await this.authKeys.init();
       await this.pendingRequests.init();
+      await this.pairingTopics.init();
       await this.expirer.init();
       await this.history.init();
       await this.engine.init();
