@@ -89,7 +89,7 @@ export class AuthEngine extends IAuthEngine {
     const relay = { protocol: RELAYER_DEFAULT_PROTOCOL };
 
     // Preparing pairing URI
-    const pairing = { topic: pairingTopic, expiry, relay, active: false };
+    const pairing = { topic: pairingTopic, expiry, relay, active: true };
     const uri = formatUri({
       protocol: this.client.protocol,
       version: this.client.version,
