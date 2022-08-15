@@ -340,10 +340,12 @@ export class AuthEngine extends IAuthEngine {
 
     const { pairingTopic } = this.client.pairingTopics.get(topic);
 
+    const newExpiry = calcExpiry(FOUR_WEEKS);
     this.client.pairing.update(pairingTopic, {
       active: true,
-      expiry: calcExpiry(FOUR_WEEKS),
+      expiry: newExpiry,
     });
+    this.setExpiry(pairingTopic, newExpiry);
 
     if (isJsonRpcResult(response)) {
       const { signature, payload } = response.result;
