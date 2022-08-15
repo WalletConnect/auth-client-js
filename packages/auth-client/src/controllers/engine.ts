@@ -136,7 +136,7 @@ export class AuthEngine extends IAuthEngine {
 
     const payload = this.client.pendingRequests.get(respondParams.id);
 
-    const receiverPublicKey = payload.requester.publicKey;
+    const receiverPublicKey = payload.payloadParams.requester.publicKey;
     const senderPublicKey = await this.client.core.crypto.generateKeyPair();
     const responseTopic = hashKey(receiverPublicKey);
 
@@ -155,8 +155,10 @@ export class AuthEngine extends IAuthEngine {
     );
   };
 
-  public getPendingRequests: IAuthEngine["getPendingRequests"] = async () =>
-    await Promise.resolve({});
+  public getPendingRequests: IAuthEngine["getPendingRequests"] = async () => {
+    const pendingRequests = this.client.pendingRequests.getAll();
+    return await Promise.resolve(pendingRequests);
+  };
 
   public getRequest: IAuthEngine["getRequest"] = async () => await Promise.resolve({});
 
@@ -304,7 +306,7 @@ export class AuthEngine extends IAuthEngine {
   // ---------- Relay Event Handlers --------------------------------- //
 
   protected onAuthRequest: IAuthEngine["onAuthRequest"] = async (topic, payload) => {
-    const { requester, statement, aud, domain, version, nonce } = payload.params;
+    const { requester, type, statement, chainId, aud, domain, version, nonce } = payload.params;
     try {
       const fullCacao: AuthEngineTypes.CacaoPayload = {
         iss: this.client.address,
@@ -316,17 +318,24 @@ export class AuthEngine extends IAuthEngine {
         statement,
       };
 
+      const message = this.constructEip4361Message(fullCacao);
+
       await this.client.pendingRequests.set(payload.id, {
-        requester,
         id: payload.id,
-        ...fullCacao,
+        message,
+        payloadParams: {
+          requester,
+          chainId,
+          type,
+          ...fullCacao,
+        },
       });
 
       this.client.emit("auth_request", {
         id: payload.id,
         topic,
         params: {
-          message: this.constructEip4361Message(fullCacao),
+          message,
         },
       });
     } catch (err: any) {

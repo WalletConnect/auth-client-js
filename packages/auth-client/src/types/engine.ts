@@ -110,7 +110,7 @@ export abstract class IAuthEngine {
 
   public abstract respond(params: AuthEngineTypes.RespondParams): Promise<void>;
 
-  public abstract getPendingRequests(): Promise<Record<number, /*PendingRequest*/ any>>;
+  public abstract getPendingRequests(): Promise<Record<number, AuthEngineTypes.PendingRequest>>;
 
   public abstract getRequest(params: { id: number }): Promise</*Cacao*/ any>;
 
