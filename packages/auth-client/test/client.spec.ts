@@ -21,7 +21,7 @@ describe("AuthClient", () => {
   // expiry logic
   vi.mock("@walletconnect/time", async () => {
     const constants: Record<string, any> = await vi.importActual("@walletconnect/time");
-    return { ...constants, FIVE_MINUTES: 2 };
+    return { ...constants, FIVE_MINUTES: 5, FOUR_WEEKS: 5 };
   });
 
   beforeEach(async () => {
@@ -153,10 +153,13 @@ describe("AuthClient", () => {
 
     await peer.pair({ uri });
 
-    await waitForRelay(100);
-
     expect(client.pairing.keys).to.eql(peer.pairing.keys);
     expect(peer.pairing.keys.length).to.eql(1);
+    expect(client.pairing.values[0].active).to.eql(false);
+
+    await waitForRelay(500);
+
+    expect(client.pairing.values[0].active).to.eql(true);
 
     await waitForRelay(5000);
 
