@@ -2,18 +2,24 @@ import { generateRandomBytes32 } from "@walletconnect/utils";
 import { expect, describe, it, beforeEach, vi } from "vitest";
 import ethers from "ethers";
 import { AuthClient } from "../src/client";
+import time from "@walletconnect/time";
 
 // TODO: Figure out a cleaner way to do this
-const waitForRelay = async () =>
+const waitForRelay = async (waitTimeOverride?: number) =>
   await new Promise((resolve) => {
     setTimeout(() => {
       resolve({});
-    }, 1000);
+    }, waitTimeOverride ?? 500);
   });
 
 describe("AuthClient", () => {
   let client: AuthClient;
   let peer: AuthClient;
+
+  vi.mock("@walletconnect/time", async () => {
+    const constants: Record<string, any> = await vi.importActual("@walletconnect/time");
+    return { ...constants, FIVE_MINUTES: constants.FIVE_SECONDS };
+  });
 
   beforeEach(async () => {
     client = await AuthClient.init({
@@ -60,6 +66,7 @@ describe("AuthClient", () => {
 
     // Ensure they paired
     expect(client.pairing.keys).to.eql(peer.pairing.keys);
+    expect(client.pairing.keys.length).to.eql(1);
 
     // Ensure each client published once (request and respond)
     expect(client.history.records.size).to.eql(peer.history.records.size);
@@ -114,5 +121,37 @@ describe("AuthClient", () => {
 
     expect(hasResponded).to.eql(true);
     expect(successfulResponse).to.eql(true);
+  });
+
+  it("expires pairings", async () => {
+    peer.on("auth_request", async (args) => {
+      const signature =
+        "0x09088b6230b7c1295b703cec3afbbd65e06b7d32e122454d544f6ea3b387566616bd76b854c7bc3bf1ea8534bf69029f97dc5e84d54953aff203bb8b70b3c01e1c";
+      await peer.respond({
+        id: args.id,
+        signature: {
+          s: signature,
+          t: "eip191",
+        },
+      });
+    });
+
+    const { uri } = await client.request({
+      aud: "http://localhost:3000/login",
+      domain: "localhost:3000",
+      chainId: "chainId",
+      nonce: "nonce",
+    });
+
+    await peer.pair({ uri });
+
+    await waitForRelay(100);
+
+    expect(client.pairing.keys).to.eql(peer.pairing.keys);
+    expect(peer.pairing.keys.length).to.eql(1);
+    expect(peer.pairing.values[0].active).to.eql(true);
+
+    await waitForRelay(5000);
+    expect(peer.pairing.keys.length).to.eql(0);
   });
 });
