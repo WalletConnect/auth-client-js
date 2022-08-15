@@ -11,6 +11,7 @@ import {
 } from "@walletconnect/jsonrpc-utils";
 import { FIVE_MINUTES } from "@walletconnect/time";
 import {
+  ExpirerTypes,
   RelayerTypes,
   /*ExpirerTypes,*/
 } from "@walletconnect/types";
@@ -22,13 +23,16 @@ import {
   getInternalError,
   hashKey,
   TYPE_1,
+  parseExpirerTarget,
+  isExpired,
+  getSdkError,
   // getSdkError,
   // isExpired,
 } from "@walletconnect/utils";
 import ethers from "ethers";
 import { JsonRpcTypes, IAuthEngine, AuthEngineTypes } from "../types";
-import { /*EXPIRER_EVENTS,*/ AUTH_CLIENT_PUBLIC_KEY_NAME, ENGINE_RPC_OPTS } from "../constants";
-import { getDidAddress, getDidAddressSegments, getDidChainId } from "../utils/address";
+import { EXPIRER_EVENTS, AUTH_CLIENT_PUBLIC_KEY_NAME, ENGINE_RPC_OPTS } from "../constants";
+import { getDidAddress, getDidChainId } from "../utils/address";
 
 export class AuthEngine extends IAuthEngine {
   private events = new EventEmitter();
@@ -43,7 +47,7 @@ export class AuthEngine extends IAuthEngine {
     if (!this.initialized) {
       await this.cleanup();
       this.registerRelayerEvents();
-      // this.registerExpirerEvents();
+      this.registerExpirerEvents();
       this.initialized = true;
     }
   };
@@ -156,9 +160,9 @@ export class AuthEngine extends IAuthEngine {
   private deletePairing = async (topic: string) => {
     await Promise.all([
       this.client.core.relayer.unsubscribe(topic),
-      // this.client.pairing.delete(topic, getSdkError("USER_DISCONNECTED")),
+      this.client.pairing.delete(topic, getSdkError("USER_DISCONNECTED")),
       this.client.core.crypto.deleteSymKey(topic),
-      // this.client.expirer.del(topic),
+      this.client.expirer.del(topic),
     ]);
   };
 
@@ -199,9 +203,9 @@ export class AuthEngine extends IAuthEngine {
 
   protected cleanup: IAuthEngine["cleanup"] = async () => {
     const pairingTopics: string[] = [];
-    // this.client.pairing.getAll().forEach((pairing) => {
-    //   if (isExpired(pairing.expiry)) pairingTopics.push(pairing.topic);
-    // });
+    this.client.pairing.getAll().forEach((pairing) => {
+      if (isExpired(pairing.expiry)) pairingTopics.push(pairing.topic);
+    });
     await Promise.all([...pairingTopics.map(this.deletePairing)]);
   };
 
@@ -346,22 +350,17 @@ export class AuthEngine extends IAuthEngine {
 
   // ---------- Expirer Events ---------------------------------------- //
 
-  // private registerExpirerEvents() {
-  //   this.client.expirer.on(EXPIRER_EVENTS.expired, async (event: ExpirerTypes.Expiration) => {
-  //     const { topic, id } = parseExpirerTarget(event.target);
-  //     if (topic) {
-  //       if (this.client.session.keys.includes(topic)) {
-  //         await this.deleteSession(topic);
-  //         this.client.events.emit("session_expire", { topic });
-  //       } else if (this.client.pairing.keys.includes(topic)) {
-  //         await this.deletePairing(topic);
-  //         this.client.events.emit("pairing_expire", { topic });
-  //       }
-  //     } else if (id) {
-  //       await this.deleteProposal(id);
-  //     }
-  //   });
-  // }
+  private registerExpirerEvents() {
+    this.client.expirer.on(EXPIRER_EVENTS.expired, async (event: ExpirerTypes.Expiration) => {
+      const { topic, id } = parseExpirerTarget(event.target);
+      if (topic) {
+        if (this.client.pairing.keys.includes(topic)) {
+          await this.deletePairing(topic);
+          this.client.events.emit("pairing_expire", { topic });
+        }
+      }
+    });
+  }
 
   // ---------- TODO: (post-alpha) Validation  ------------------------------------------- //
 }
