@@ -107,7 +107,8 @@ describe("AuthClient", () => {
     });
 
     client.on("auth_response", (args) => {
-      successfulResponse = !(args.params instanceof Error);
+      console.log(args.params);
+      successfulResponse = args.params.code === undefined;
       hasResponded = true;
     });
 

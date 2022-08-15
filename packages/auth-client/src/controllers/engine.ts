@@ -354,7 +354,11 @@ export class AuthEngine extends IAuthEngine {
       const walletAddress = getDidAddress(payload.iss);
 
       if (address !== walletAddress) {
-        this.client.emit("auth_response", { id, topic, params: new Error("Invalid Signature") });
+        this.client.emit("auth_response", {
+          id,
+          topic,
+          params: { message: "Invalid signature", code: -1 },
+        });
       } else {
         this.client.emit("auth_response", { id, topic, params: response });
       }
