@@ -365,8 +365,6 @@ export class AuthEngine extends IAuthEngine {
       const address = utils.verifyMessage(reconstructed, signature.s);
       const walletAddress = getDidAddress(payload.iss);
 
-      console.log({ payload });
-
       if (address !== walletAddress) {
         this.client.emit("auth_response", {
           id,
