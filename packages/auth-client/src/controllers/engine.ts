@@ -348,7 +348,7 @@ export class AuthEngine extends IAuthEngine {
     }
   };
 
-  protected onAuthResponse: IAuthEngine["onAuthResponse"] = (topic, response) => {
+  protected onAuthResponse: IAuthEngine["onAuthResponse"] = async (topic, response) => {
     const { id } = response;
 
     const { pairingTopic } = this.client.pairingTopics.get(topic);
