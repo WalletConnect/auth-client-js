@@ -41,7 +41,7 @@ describe("AuthClient", () => {
       storageOptions: {
         database: ":memory:",
       },
-      iss: "did:pkh:eip155:1:0xdE80F109b4923415655274dADB17b73876861c56",
+      iss: "did:pkh:eip155:1:0x7Be83ef7451916aacb71DDD5978f7fD2D00A6E6a",
     });
   });
 
@@ -96,7 +96,7 @@ describe("AuthClient", () => {
     let successfulResponse = false;
     peer.on("auth_request", async (args) => {
       const signature =
-        "0x09088b6230b7c1295b703cec3afbbd65e06b7d32e122454d544f6ea3b387566616bd76b854c7bc3bf1ea8534bf69029f97dc5e84d54953aff203bb8b70b3c01e1c";
+        "0x2f4f830299e832cd35cd33e43ea1242ecc72850be417351a74747430df3dd89075f141779592562829385840349a48b54b155c50071e919fdcdfd2cbd492d6fd1c";
       await peer.respond({
         id: args.id,
         signature: {
@@ -107,7 +107,7 @@ describe("AuthClient", () => {
     });
 
     client.on("auth_response", (args) => {
-      successfulResponse = !(args.params instanceof Error);
+      successfulResponse = Boolean(args.params.result?.signature);
       hasResponded = true;
     });
 
@@ -134,7 +134,7 @@ describe("AuthClient", () => {
   it("expires pairings", async () => {
     peer.on("auth_request", async (args) => {
       const signature =
-        "0x09088b6230b7c1295b703cec3afbbd65e06b7d32e122454d544f6ea3b387566616bd76b854c7bc3bf1ea8534bf69029f97dc5e84d54953aff203bb8b70b3c01e1c";
+        "0x2f4f830299e832cd35cd33e43ea1242ecc72850be417351a74747430df3dd89075f141779592562829385840349a48b54b155c50071e919fdcdfd2cbd492d6fd1c";
       await peer.respond({
         id: args.id,
         signature: {

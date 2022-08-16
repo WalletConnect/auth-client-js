@@ -5,7 +5,7 @@ export function getDidAddressSegments(iss: string) {
 export function getDidChainId(iss: string) {
   const segments = iss && getDidAddressSegments(iss);
   if (segments) {
-    return segments[2];
+    return segments[3];
   }
   return undefined;
 }
