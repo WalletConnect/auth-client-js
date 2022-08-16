@@ -1,9 +1,7 @@
 import { expect, describe, it, beforeEach, beforeAll, vi, afterEach } from "vitest";
 import ethers from "ethers";
 import { AuthClient } from "../src/client";
-import { AUTH_CLIENT_STORAGE_PREFIX } from "../src/constants";
 
-// TODO: Figure out a cleaner way to do this
 const waitForRelay = async (waitTimeOverride?: number) => {
   await new Promise((resolve) => {
     setTimeout(() => {
@@ -137,7 +135,6 @@ describe("AuthClient", () => {
   });
 
   it("correctly retrieves complete requests", async () => {
-    const storageKey = AUTH_CLIENT_STORAGE_PREFIX + "0.3" + "//" + "requests";
     const aud = "http://localhost:3000/login";
     const id = 42;
     client.requests.set(id, {
