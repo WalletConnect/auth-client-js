@@ -26,6 +26,7 @@ import { utils } from "ethers";
 import { JsonRpcTypes, IAuthEngine, AuthEngineTypes } from "../types";
 import { EXPIRER_EVENTS, AUTH_CLIENT_PUBLIC_KEY_NAME, ENGINE_RPC_OPTS } from "../constants";
 import { getDidAddress, getDidChainId } from "../utils/address";
+import { getCompleteRequest, getPendingRequest, getPendingRequests } from "../utils/store";
 
 export class AuthEngine extends IAuthEngine {
   private initialized = false;
@@ -129,34 +130,39 @@ export class AuthEngine extends IAuthEngine {
     this.isInitialized();
     // await this.isValidRespond(params);
 
-    const pendingRequest = this.client.pendingRequests.get(respondParams.id);
+    const pendingRequest = getPendingRequest(this.client.requests, respondParams.id);
 
     const receiverPublicKey = pendingRequest.requester.publicKey;
     const senderPublicKey = await this.client.core.crypto.generateKeyPair();
     const responseTopic = hashKey(receiverPublicKey);
 
-    await this.sendResult<"wc_authRequest">(
-      pendingRequest.id,
-      responseTopic,
-      {
-        header: {
-          t: "eip4361",
-        },
-        payload: pendingRequest.cacaoPayload,
-        signature: respondParams.signature,
+    const cacao: AuthEngineTypes.Cacao = {
+      header: {
+        t: "eip4361",
       },
-      {
-        type: TYPE_1,
-        receiverPublicKey,
-        senderPublicKey,
-      },
-    );
+      payload: pendingRequest.cacaoPayload,
+      signature: respondParams.signature,
+    };
+
+    const id = await this.sendResult<"wc_authRequest">(pendingRequest.id, responseTopic, cacao, {
+      type: TYPE_1,
+      receiverPublicKey,
+      senderPublicKey,
+    });
+
+    await this.client.requests.set(id, { id, ...cacao });
   };
 
-  public getPendingRequests: IAuthEngine["getPendingRequests"] = async () =>
-    await Promise.resolve({});
+  public getPendingRequests: IAuthEngine["getPendingRequests"] = () => {
+    const pendingRequests = getPendingRequests(this.client.requests);
+    return pendingRequests;
+  };
 
-  public getRequest: IAuthEngine["getRequest"] = async () => await Promise.resolve({});
+  public getRequest: IAuthEngine["getRequest"] = ({ id }) => {
+    const request = getCompleteRequest(this.client.requests, id);
+
+    return request;
+  };
 
   // ---------- Private Helpers --------------------------------------- //
 
@@ -193,6 +199,8 @@ export class AuthEngine extends IAuthEngine {
     const rpcOpts = ENGINE_RPC_OPTS[record.request.method].res;
     await this.client.core.relayer.publish(topic, message, rpcOpts);
     await this.client.history.resolve(payload);
+
+    return payload.id;
   };
 
   protected sendError: IAuthEngine["sendError"] = async (id, topic, error, encodeOpts) => {
@@ -318,9 +326,12 @@ export class AuthEngine extends IAuthEngine {
         statement,
       };
 
-      await this.client.pendingRequests.set(payload.id, {
+      const message = this.constructEip4361Message(cacaoPayload);
+
+      await this.client.requests.set(payload.id, {
         requester,
         id: payload.id,
+        message,
         cacaoPayload,
       });
 
@@ -351,6 +362,9 @@ export class AuthEngine extends IAuthEngine {
 
     if (isJsonRpcResult(response)) {
       const { signature, payload } = response.result;
+
+      await this.client.requests.set(id, { id, ...response.result });
+
       const reconstructed = this.constructEip4361Message(payload);
       const address = utils.verifyMessage(reconstructed, signature.s);
       const walletAddress = getDidAddress(payload.iss);

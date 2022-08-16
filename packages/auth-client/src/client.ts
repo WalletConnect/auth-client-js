@@ -27,7 +27,7 @@ export class AuthClient extends IAuthClient {
   public history: IAuthClient["history"];
   public authKeys: IAuthClient["authKeys"];
   public pairingTopics: IAuthClient["pairingTopics"];
-  public pendingRequests: IAuthClient["pendingRequests"];
+  public requests: IAuthClient["requests"];
   public address: IAuthClient["address"];
 
   static async init(opts?: Record<string, any>) {
@@ -58,12 +58,7 @@ export class AuthClient extends IAuthClient {
       "pairingTopics",
       AUTH_CLIENT_STORAGE_PREFIX,
     );
-    this.pendingRequests = new Store(
-      this.core,
-      this.logger,
-      "pendingRequests",
-      AUTH_CLIENT_STORAGE_PREFIX,
-    );
+    this.requests = new Store(this.core, this.logger, "requests", AUTH_CLIENT_STORAGE_PREFIX);
     this.pairing = new Pairing(this.core, this.logger);
     this.expirer = new Expirer(this.core, this.logger);
     this.engine = new AuthEngine(this);
@@ -129,18 +124,18 @@ export class AuthClient extends IAuthClient {
     }
   };
 
-  public getPendingRequests: IAuthClient["getPendingRequests"] = async () => {
+  public getPendingRequests: IAuthClient["getPendingRequests"] = () => {
     try {
-      return await this.engine.getPendingRequests();
+      return this.engine.getPendingRequests();
     } catch (error: any) {
       this.logger.error(error.message);
       throw error;
     }
   };
 
-  public getRequest: IAuthClient["getRequest"] = async (params) => {
+  public getRequest: IAuthClient["getRequest"] = (params) => {
     try {
-      return await this.engine.getRequest(params);
+      return this.engine.getRequest(params);
     } catch (error: any) {
       this.logger.error(error.message);
       throw error;
@@ -155,7 +150,7 @@ export class AuthClient extends IAuthClient {
       await this.core.start();
       await this.pairing.init();
       await this.authKeys.init();
-      await this.pendingRequests.init();
+      await this.requests.init();
       await this.pairingTopics.init();
       await this.expirer.init();
       await this.history.init();

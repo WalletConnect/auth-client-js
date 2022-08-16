@@ -82,7 +82,10 @@ export declare namespace AuthEngineTypes {
 
   interface PendingRequest {
     id: number;
-    payloadParams: PayloadParams;
+    requester: {
+      publicKey: string;
+    };
+    cacaoPayload: CacaoPayload;
     message: string;
   }
 
@@ -106,9 +109,9 @@ export abstract class IAuthEngine {
 
   public abstract respond(params: AuthEngineTypes.RespondParams): Promise<void>;
 
-  public abstract getPendingRequests(): Promise<Record<number, /*PendingRequest*/ any>>;
+  public abstract getPendingRequests(): Record<number, AuthEngineTypes.PendingRequest>;
 
-  public abstract getRequest(params: { id: number }): Promise</*Cacao*/ any>;
+  public abstract getRequest(params: { id: number }): AuthEngineTypes.Cacao;
 
   // ---------- Protected Helpers --------------------------------------- //
 
@@ -124,7 +127,7 @@ export abstract class IAuthEngine {
     topic: string,
     result: JsonRpcTypes.Results[M],
     encodeOpts?: CryptoTypes.EncodeOptions,
-  ): Promise<void>;
+  ): Promise<number>;
 
   protected abstract sendError(
     id: number,
