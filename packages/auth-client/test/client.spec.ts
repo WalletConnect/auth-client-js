@@ -1,5 +1,4 @@
-import { generateRandomBytes32 } from "@walletconnect/utils";
-import { expect, describe, it, beforeEach, vi, afterEach } from "vitest";
+import { expect, describe, it, beforeEach, beforeAll, vi, afterEach } from "vitest";
 import ethers from "ethers";
 import { AuthClient } from "../src/client";
 import { AUTH_CLIENT_STORAGE_PREFIX } from "../src/constants";
@@ -16,6 +15,7 @@ const waitForRelay = async (waitTimeOverride?: number) => {
 describe("AuthClient", () => {
   let client: AuthClient;
   let peer: AuthClient;
+  let wallet: ethers.Wallet;
 
   // Mocking five minutes to be five seconds to test expiry.
   // Modified constant instead of functions to be as close as possible to actual
@@ -23,6 +23,11 @@ describe("AuthClient", () => {
   vi.mock("@walletconnect/time", async () => {
     const constants: Record<string, any> = await vi.importActual("@walletconnect/time");
     return { ...constants, FIVE_MINUTES: 5, FOUR_WEEKS: 5 };
+  });
+
+  // Set up a wallet to use as the external signer.
+  beforeAll(() => {
+    wallet = ethers.Wallet.createRandom();
   });
 
   beforeEach(async () => {
@@ -42,7 +47,7 @@ describe("AuthClient", () => {
       storageOptions: {
         database: ":memory:",
       },
-      iss: "did:pkh:eip155:1:0x7Be83ef7451916aacb71DDD5978f7fD2D00A6E6a",
+      iss: `did:pkh:eip155:1:${wallet.address}`,
     });
   });
 
@@ -96,8 +101,7 @@ describe("AuthClient", () => {
     let hasResponded = false;
     let successfulResponse = false;
     peer.on("auth_request", async (args) => {
-      const signature =
-        "0x2f4f830299e832cd35cd33e43ea1242ecc72850be417351a74747430df3dd89075f141779592562829385840349a48b54b155c50071e919fdcdfd2cbd492d6fd1c";
+      const signature = await wallet.signMessage(args.params.message);
       await peer.respond({
         id: args.id,
         signature: {
@@ -193,8 +197,7 @@ describe("AuthClient", () => {
 
   it("expires pairings", async () => {
     peer.on("auth_request", async (args) => {
-      const signature =
-        "0x2f4f830299e832cd35cd33e43ea1242ecc72850be417351a74747430df3dd89075f141779592562829385840349a48b54b155c50071e919fdcdfd2cbd492d6fd1c";
+      const signature = await wallet.signMessage(args.params.message);
       await peer.respond({
         id: args.id,
         signature: {
