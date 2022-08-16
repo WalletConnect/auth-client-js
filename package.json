@@ -29,6 +29,9 @@
     "test": "npm run test --workspaces",
     "test:watch": "npm run test:watch --workspaces"
   },
+  "engines": {
+    "node": "16"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/walletconnect/auth-client-js.git"

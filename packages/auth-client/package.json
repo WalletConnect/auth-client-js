@@ -30,6 +30,9 @@
     "test": "npm run test:pre; npm run test:run",
     "test:watch": "vitest watch --dir test"
   },
+  "engines": {
+    "node": "16"
+  },
   "dependencies": {
     "@walletconnect/core": "2.0.0-rc.2",
     "@walletconnect/events": "1.0.0",
