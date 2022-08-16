@@ -100,7 +100,7 @@ describe("AuthClient", () => {
   it("handles responses", async () => {
     let hasResponded = false;
     let successfulResponse = false;
-    peer.on("auth_request", async (args) => {
+    peer.once("auth_request", async (args) => {
       const signature = await wallet.signMessage(args.params.message);
       await peer.respond({
         id: args.id,
@@ -111,7 +111,7 @@ describe("AuthClient", () => {
       });
     });
 
-    client.on("auth_response", (args) => {
+    client.once("auth_response", (args) => {
       successfulResponse = Boolean(args.params.result?.signature);
       hasResponded = true;
     });
@@ -196,7 +196,7 @@ describe("AuthClient", () => {
   });
 
   it("expires pairings", async () => {
-    peer.on("auth_request", async (args) => {
+    peer.once("auth_request", async (args) => {
       const signature = await wallet.signMessage(args.params.message);
       await peer.respond({
         id: args.id,
