@@ -286,9 +286,7 @@ export class AuthEngine extends IAuthEngine {
     const version = `Version: ${cacao.version}`;
     const chainId = `Chain ID: ${getDidChainId(cacao.iss)}`;
     const nonce = `Nonce: ${cacao.nonce}`;
-    // FIXME: use the proper `iat` value here once we can handle dynamic sigs in unit tests.
-    // const issuedAt = `Issued at: ${cacao.iat}`;
-    const issuedAt = `Issued at: `;
+    const issuedAt = `Issued at: ${cacao.iat}`;
     const resources = `\n`;
 
     const message = [
