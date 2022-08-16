@@ -27,7 +27,11 @@
     "prettier:write": "prettier --check '{src,test}/**/*.{js,ts,jsx,tsx}' --write",
     "test:pre": "rm -rf ./test/test.db",
     "test:run": "vitest run --dir test",
-    "test": "npm run test:pre; npm run test:run"
+    "test": "npm run test:pre; npm run test:run",
+    "test:watch": "vitest watch --dir test"
+  },
+  "engines": {
+    "node": "16"
   },
   "dependencies": {
     "@walletconnect/core": "2.0.0-rc.2",

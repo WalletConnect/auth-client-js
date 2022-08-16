@@ -1,10 +1,7 @@
-import { generateRandomBytes32 } from "@walletconnect/utils";
-import { expect, describe, it, beforeEach, vi, afterEach } from "vitest";
+import { expect, describe, it, beforeEach, beforeAll, vi, afterEach } from "vitest";
 import ethers from "ethers";
 import { AuthClient } from "../src/client";
-import { AUTH_CLIENT_STORAGE_PREFIX } from "../src/constants";
 
-// TODO: Figure out a cleaner way to do this
 const waitForRelay = async (waitTimeOverride?: number) => {
   await new Promise((resolve) => {
     setTimeout(() => {
@@ -13,9 +10,22 @@ const waitForRelay = async (waitTimeOverride?: number) => {
   });
 };
 
+// Polls boolean value every interval to check for an event callback having been triggered.
+const waitForEvent = async (checkForEvent: (...args: any[]) => boolean) => {
+  await new Promise((resolve) => {
+    const intervalId = setInterval(() => {
+      if (checkForEvent()) {
+        clearInterval(intervalId);
+        resolve({});
+      }
+    }, 100);
+  });
+};
+
 describe("AuthClient", () => {
   let client: AuthClient;
   let peer: AuthClient;
+  let wallet: ethers.Wallet;
 
   // Mocking five minutes to be five seconds to test expiry.
   // Modified constant instead of functions to be as close as possible to actual
@@ -23,6 +33,11 @@ describe("AuthClient", () => {
   vi.mock("@walletconnect/time", async () => {
     const constants: Record<string, any> = await vi.importActual("@walletconnect/time");
     return { ...constants, FIVE_MINUTES: 5, FOUR_WEEKS: 5 };
+  });
+
+  // Set up a wallet to use as the external signer.
+  beforeAll(() => {
+    wallet = ethers.Wallet.createRandom();
   });
 
   beforeEach(async () => {
@@ -42,7 +57,7 @@ describe("AuthClient", () => {
       storageOptions: {
         database: ":memory:",
       },
-      iss: "did:pkh:eip155:1:0x7Be83ef7451916aacb71DDD5978f7fD2D00A6E6a",
+      iss: `did:pkh:eip155:1:${wallet.address}`,
     });
   });
 
@@ -57,6 +72,10 @@ describe("AuthClient", () => {
   });
 
   it("Pairs", async () => {
+    let hasPaired = false;
+    peer.once("auth_request", () => {
+      hasPaired = true;
+    });
     const { uri } = await client.request({
       aud: "http://localhost:3000/login",
       domain: "localhost:3000",
@@ -65,8 +84,7 @@ describe("AuthClient", () => {
     });
 
     await peer.pair({ uri });
-
-    await waitForRelay();
+    await waitForEvent(() => hasPaired);
 
     // Ensure they paired
     expect(client.pairing.keys).to.eql(peer.pairing.keys);
@@ -78,6 +96,12 @@ describe("AuthClient", () => {
   });
 
   it("handles incoming auth requests", async () => {
+    let receivedAuthRequest = false;
+
+    peer.once("auth_request", () => {
+      receivedAuthRequest = true;
+    });
+
     const { uri } = await client.request({
       aud: "http://localhost:3000/login",
       domain: "localhost:3000",
@@ -87,7 +111,7 @@ describe("AuthClient", () => {
 
     await peer.pair({ uri });
 
-    await waitForRelay();
+    await waitForEvent(() => receivedAuthRequest);
 
     expect(peer.requests.length).to.eql(1);
   });
@@ -95,9 +119,8 @@ describe("AuthClient", () => {
   it("handles responses", async () => {
     let hasResponded = false;
     let successfulResponse = false;
-    peer.on("auth_request", async (args) => {
-      const signature =
-        "0x2f4f830299e832cd35cd33e43ea1242ecc72850be417351a74747430df3dd89075f141779592562829385840349a48b54b155c50071e919fdcdfd2cbd492d6fd1c";
+    peer.once("auth_request", async (args) => {
+      const signature = await wallet.signMessage(args.params.message);
       await peer.respond({
         id: args.id,
         signature: {
@@ -107,7 +130,7 @@ describe("AuthClient", () => {
       });
     });
 
-    client.on("auth_response", (args) => {
+    client.once("auth_response", (args) => {
       successfulResponse = Boolean(args.params.result?.signature);
       hasResponded = true;
     });
@@ -124,7 +147,7 @@ describe("AuthClient", () => {
 
     await peer.pair({ uri });
 
-    await waitForRelay();
+    await waitForEvent(() => hasResponded);
 
     expect(client.pairing.values[0].active).to.eql(true);
 
@@ -133,7 +156,7 @@ describe("AuthClient", () => {
   });
 
   it("correctly retrieves complete requests", async () => {
-    const storageKey = AUTH_CLIENT_STORAGE_PREFIX + "0.3" + "//" + "requests";
+    let peerHasResponded = false;
     const aud = "http://localhost:3000/login";
     const id = 42;
     client.requests.set(id, {
@@ -143,9 +166,8 @@ describe("AuthClient", () => {
       },
     } as any);
 
-    peer.on("auth_request", async (args) => {
-      const signature =
-        "0x2f4f830299e832cd35cd33e43ea1242ecc72850be417351a74747430df3dd89075f141779592562829385840349a48b54b155c50071e919fdcdfd2cbd492d6fd1c";
+    peer.once("auth_request", async (args) => {
+      const signature = await wallet.signMessage(args.params.message);
       await peer.respond({
         id: args.id,
         signature: {
@@ -153,6 +175,7 @@ describe("AuthClient", () => {
           t: "eip191",
         },
       });
+      peerHasResponded = true;
     });
 
     const { uri } = await client.request({
@@ -164,7 +187,7 @@ describe("AuthClient", () => {
 
     await peer.pair({ uri });
 
-    await waitForRelay();
+    await waitForEvent(() => peerHasResponded);
 
     const request = client.getRequest({ id });
 
@@ -172,7 +195,13 @@ describe("AuthClient", () => {
   });
 
   it("correctly retrieves pending requests", async () => {
+    let receivedAuthRequest = false;
     const aud = "http://localhost:3000/login";
+
+    peer.once("auth_request", () => {
+      receivedAuthRequest = true;
+    });
+
     const { uri } = await client.request({
       aud,
       domain: "localhost:3000",
@@ -182,7 +211,7 @@ describe("AuthClient", () => {
 
     await peer.pair({ uri });
 
-    await waitForRelay();
+    await waitForEvent(() => receivedAuthRequest);
 
     const requests = peer.getPendingRequests();
 
@@ -192,9 +221,9 @@ describe("AuthClient", () => {
   });
 
   it("expires pairings", async () => {
-    peer.on("auth_request", async (args) => {
-      const signature =
-        "0x2f4f830299e832cd35cd33e43ea1242ecc72850be417351a74747430df3dd89075f141779592562829385840349a48b54b155c50071e919fdcdfd2cbd492d6fd1c";
+    let peerHasResponded = false;
+    peer.once("auth_request", async (args) => {
+      const signature = await wallet.signMessage(args.params.message);
       await peer.respond({
         id: args.id,
         signature: {
@@ -202,6 +231,7 @@ describe("AuthClient", () => {
           t: "eip191",
         },
       });
+      peerHasResponded = true;
     });
 
     const { uri } = await client.request({
@@ -217,7 +247,7 @@ describe("AuthClient", () => {
     expect(peer.pairing.keys.length).to.eql(1);
     expect(client.pairing.values[0].active).to.eql(false);
 
-    await waitForRelay(500);
+    await waitForEvent(() => peerHasResponded);
 
     expect(client.pairing.values[0].active).to.eql(true);
 

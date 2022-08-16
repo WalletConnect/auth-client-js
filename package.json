@@ -26,7 +26,11 @@
     "prettier": "npm run prettier --workspaces",
     "prettier:write": "npm run prettier:write --workspaces",
     "build": "npm run clean --workspaces; npm run build --workspaces",
-    "test": "npm run test --workspaces"
+    "test": "npm run test --workspaces",
+    "test:watch": "npm run test:watch --workspaces"
+  },
+  "engines": {
+    "node": "16"
   },
   "repository": {
     "type": "git",
