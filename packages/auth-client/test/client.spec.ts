@@ -132,7 +132,7 @@ describe("AuthClient", () => {
     expect(successfulResponse).to.eql(true);
   });
 
-  it("correctly retreives complete requests", async () => {
+  it("correctly retrieves complete requests", async () => {
     const storageKey = AUTH_CLIENT_STORAGE_PREFIX + "0.3" + "//" + "requests";
     const aud = "http://localhost:3000/login";
     const id = 42;
@@ -171,7 +171,7 @@ describe("AuthClient", () => {
     expect(request.payload.aud).to.eql(aud);
   });
 
-  it("correctly retreives pending requests", async () => {
+  it("correctly retrieves pending requests", async () => {
     const aud = "http://localhost:3000/login";
     const { uri } = await client.request({
       aud,
