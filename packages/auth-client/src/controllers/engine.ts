@@ -150,7 +150,7 @@ export class AuthEngine extends IAuthEngine {
       senderPublicKey,
     });
 
-    this.client.requests.set(id, { id, ...cacao });
+    await this.client.requests.set(id, { id, ...cacao });
   };
 
   public getPendingRequests: IAuthEngine["getPendingRequests"] = () => {
@@ -363,7 +363,7 @@ export class AuthEngine extends IAuthEngine {
     if (isJsonRpcResult(response)) {
       const { signature, payload } = response.result;
 
-      this.client.requests.set(id, { id, ...response.result });
+      await this.client.requests.set(id, { id, ...response.result });
 
       const reconstructed = this.constructEip4361Message(payload);
       const address = utils.verifyMessage(reconstructed, signature.s);
