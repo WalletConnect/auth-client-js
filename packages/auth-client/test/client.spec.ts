@@ -10,6 +10,18 @@ const waitForRelay = async (waitTimeOverride?: number) => {
   });
 };
 
+// Polls boolean value every interval to check for an event callback having been triggered.
+const waitForEvent = async (checkForEvent: (...args: any[]) => boolean) => {
+  await new Promise((resolve) => {
+    const intervalId = setInterval(() => {
+      if (checkForEvent()) {
+        clearInterval(intervalId);
+        resolve({});
+      }
+    }, 100);
+  });
+};
+
 describe("AuthClient", () => {
   let client: AuthClient;
   let peer: AuthClient;
@@ -60,6 +72,10 @@ describe("AuthClient", () => {
   });
 
   it("Pairs", async () => {
+    let hasPaired = false;
+    peer.once("auth_request", () => {
+      hasPaired = true;
+    });
     const { uri } = await client.request({
       aud: "http://localhost:3000/login",
       domain: "localhost:3000",
@@ -68,8 +84,7 @@ describe("AuthClient", () => {
     });
 
     await peer.pair({ uri });
-
-    await waitForRelay();
+    await waitForEvent(() => hasPaired);
 
     // Ensure they paired
     expect(client.pairing.keys).to.eql(peer.pairing.keys);
@@ -81,6 +96,12 @@ describe("AuthClient", () => {
   });
 
   it("handles incoming auth requests", async () => {
+    let receivedAuthRequest = false;
+
+    peer.once("auth_request", () => {
+      receivedAuthRequest = true;
+    });
+
     const { uri } = await client.request({
       aud: "http://localhost:3000/login",
       domain: "localhost:3000",
@@ -90,7 +111,7 @@ describe("AuthClient", () => {
 
     await peer.pair({ uri });
 
-    await waitForRelay();
+    await waitForEvent(() => receivedAuthRequest);
 
     expect(peer.requests.length).to.eql(1);
   });
@@ -126,7 +147,7 @@ describe("AuthClient", () => {
 
     await peer.pair({ uri });
 
-    await waitForRelay();
+    await waitForEvent(() => hasResponded);
 
     expect(client.pairing.values[0].active).to.eql(true);
 
@@ -135,6 +156,7 @@ describe("AuthClient", () => {
   });
 
   it("correctly retrieves complete requests", async () => {
+    let peerHasResponded = false;
     const aud = "http://localhost:3000/login";
     const id = 42;
     client.requests.set(id, {
@@ -144,55 +166,6 @@ describe("AuthClient", () => {
       },
     } as any);
 
-    peer.on("auth_request", async (args) => {
-      const signature =
-        "0x2f4f830299e832cd35cd33e43ea1242ecc72850be417351a74747430df3dd89075f141779592562829385840349a48b54b155c50071e919fdcdfd2cbd492d6fd1c";
-      await peer.respond({
-        id: args.id,
-        signature: {
-          s: signature,
-          t: "eip191",
-        },
-      });
-    });
-
-    const { uri } = await client.request({
-      aud,
-      domain: "localhost:3000",
-      chainId: "chainId",
-      nonce: "nonce",
-    });
-
-    await peer.pair({ uri });
-
-    await waitForRelay();
-
-    const request = client.getRequest({ id });
-
-    expect(request.payload.aud).to.eql(aud);
-  });
-
-  it("correctly retrieves pending requests", async () => {
-    const aud = "http://localhost:3000/login";
-    const { uri } = await client.request({
-      aud,
-      domain: "localhost:3000",
-      chainId: "chainId",
-      nonce: "nonce",
-    });
-
-    await peer.pair({ uri });
-
-    await waitForRelay();
-
-    const requests = peer.getPendingRequests();
-
-    expect(Object.values(requests).length).to.eql(1);
-
-    expect(Object.values(requests)[0].cacaoPayload.aud).to.eql(aud);
-  });
-
-  it("expires pairings", async () => {
     peer.once("auth_request", async (args) => {
       const signature = await wallet.signMessage(args.params.message);
       await peer.respond({
@@ -202,6 +175,63 @@ describe("AuthClient", () => {
           t: "eip191",
         },
       });
+      peerHasResponded = true;
+    });
+
+    const { uri } = await client.request({
+      aud,
+      domain: "localhost:3000",
+      chainId: "chainId",
+      nonce: "nonce",
+    });
+
+    await peer.pair({ uri });
+
+    await waitForEvent(() => peerHasResponded);
+
+    const request = client.getRequest({ id });
+
+    expect(request.payload.aud).to.eql(aud);
+  });
+
+  it("correctly retrieves pending requests", async () => {
+    let receivedAuthRequest = false;
+    const aud = "http://localhost:3000/login";
+
+    peer.once("auth_request", () => {
+      receivedAuthRequest = true;
+    });
+
+    const { uri } = await client.request({
+      aud,
+      domain: "localhost:3000",
+      chainId: "chainId",
+      nonce: "nonce",
+    });
+
+    await peer.pair({ uri });
+
+    await waitForEvent(() => receivedAuthRequest);
+
+    const requests = peer.getPendingRequests();
+
+    expect(Object.values(requests).length).to.eql(1);
+
+    expect(Object.values(requests)[0].cacaoPayload.aud).to.eql(aud);
+  });
+
+  it("expires pairings", async () => {
+    let peerHasResponded = false;
+    peer.once("auth_request", async (args) => {
+      const signature = await wallet.signMessage(args.params.message);
+      await peer.respond({
+        id: args.id,
+        signature: {
+          s: signature,
+          t: "eip191",
+        },
+      });
+      peerHasResponded = true;
     });
 
     const { uri } = await client.request({
@@ -217,7 +247,7 @@ describe("AuthClient", () => {
     expect(peer.pairing.keys.length).to.eql(1);
     expect(client.pairing.values[0].active).to.eql(false);
 
-    await waitForRelay(500);
+    await waitForEvent(() => peerHasResponded);
 
     expect(client.pairing.values[0].active).to.eql(true);
 
