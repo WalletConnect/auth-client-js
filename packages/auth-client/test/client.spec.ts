@@ -2,6 +2,7 @@ import { generateRandomBytes32 } from "@walletconnect/utils";
 import { expect, describe, it, beforeEach, vi, afterEach } from "vitest";
 import ethers from "ethers";
 import { AuthClient } from "../src/client";
+import { AUTH_CLIENT_STORAGE_PREFIX } from "../src/constants";
 
 // TODO: Figure out a cleaner way to do this
 const waitForRelay = async (waitTimeOverride?: number) => {
@@ -88,7 +89,7 @@ describe("AuthClient", () => {
 
     await waitForRelay();
 
-    expect(peer.pendingRequests.length).to.eql(1);
+    expect(peer.requests.length).to.eql(1);
   });
 
   it("handles responses", async () => {
@@ -129,6 +130,65 @@ describe("AuthClient", () => {
 
     expect(hasResponded).to.eql(true);
     expect(successfulResponse).to.eql(true);
+  });
+
+  it("correctly retreives complete requests", async () => {
+    const storageKey = AUTH_CLIENT_STORAGE_PREFIX + "0.3" + "//" + "requests";
+    const aud = "http://localhost:3000/login";
+    const id = 42;
+    client.requests.set(id, {
+      id,
+      payload: {
+        aud,
+      },
+    } as any);
+
+    peer.on("auth_request", async (args) => {
+      const signature =
+        "0x2f4f830299e832cd35cd33e43ea1242ecc72850be417351a74747430df3dd89075f141779592562829385840349a48b54b155c50071e919fdcdfd2cbd492d6fd1c";
+      await peer.respond({
+        id: args.id,
+        signature: {
+          s: signature,
+          t: "eip191",
+        },
+      });
+    });
+
+    const { uri } = await client.request({
+      aud,
+      domain: "localhost:3000",
+      chainId: "chainId",
+      nonce: "nonce",
+    });
+
+    await peer.pair({ uri });
+
+    await waitForRelay();
+
+    const request = client.getRequest({ id });
+
+    expect(request.payload.aud).to.eql(aud);
+  });
+
+  it("correctly retreives pending requests", async () => {
+    const aud = "http://localhost:3000/login";
+    const { uri } = await client.request({
+      aud,
+      domain: "localhost:3000",
+      chainId: "chainId",
+      nonce: "nonce",
+    });
+
+    await peer.pair({ uri });
+
+    await waitForRelay();
+
+    const requests = peer.getPendingRequests();
+
+    expect(Object.values(requests).length).to.eql(1);
+
+    expect(Object.values(requests)[0].cacaoPayload.aud).to.eql(aud);
   });
 
   it("expires pairings", async () => {
