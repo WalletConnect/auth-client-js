@@ -1,4 +1,3 @@
-import EventEmitter from "events";
 import { RELAYER_EVENTS, RELAYER_DEFAULT_PROTOCOL } from "@walletconnect/core";
 import {
   formatJsonRpcRequest,
@@ -10,11 +9,7 @@ import {
   isJsonRpcError,
 } from "@walletconnect/jsonrpc-utils";
 import { FIVE_MINUTES, FOUR_WEEKS } from "@walletconnect/time";
-import {
-  ExpirerTypes,
-  RelayerTypes,
-  /*ExpirerTypes,*/
-} from "@walletconnect/types";
+import { ExpirerTypes, RelayerTypes } from "@walletconnect/types";
 import {
   calcExpiry,
   formatUri,
@@ -26,16 +21,13 @@ import {
   parseExpirerTarget,
   isExpired,
   getSdkError,
-  // getSdkError,
-  // isExpired,
 } from "@walletconnect/utils";
-import ethers from "ethers";
+import { utils } from "ethers";
 import { JsonRpcTypes, IAuthEngine, AuthEngineTypes } from "../types";
 import { EXPIRER_EVENTS, AUTH_CLIENT_PUBLIC_KEY_NAME, ENGINE_RPC_OPTS } from "../constants";
 import { getDidAddress, getDidChainId } from "../utils/address";
 
 export class AuthEngine extends IAuthEngine {
-  private events = new EventEmitter();
   private initialized = false;
   public name = "authEngine";
 
@@ -54,7 +46,6 @@ export class AuthEngine extends IAuthEngine {
 
   // ---------- Public ------------------------------------------------ //
 
-  // TODO: taken as-is from Sign, needs review
   public pair: IAuthEngine["pair"] = async (params) => {
     this.isInitialized();
     // TODO: Check this out after happy path is complete
@@ -74,8 +65,7 @@ export class AuthEngine extends IAuthEngine {
     return pairing;
   };
 
-  // TODO: taken as-is from Sign, needs review
-  public request: IAuthEngine["request"] = async <T>(params: AuthEngineTypes.PayloadParams) => {
+  public request: IAuthEngine["request"] = async (params: AuthEngineTypes.PayloadParams) => {
     this.isInitialized();
     // await this.isValidRequest(params);
 
@@ -115,18 +105,23 @@ export class AuthEngine extends IAuthEngine {
 
     // SPEC: A will construct an authentication request.
     // TODO: Fill out the rest of the properties here
-    const { chainId, aud, domain, nonce } = params;
+    const { chainId, aud, domain, nonce, type } = params;
 
     // SPEC: A encrypts reuqest with symKey S
     // SPEC: A publishes encrypted request to topic
     const id = await this.sendRequest(pairingTopic, "wc_authRequest", {
-      chainId,
-      aud,
-      domain,
-      version: "1",
-      nonce,
+      payloadParams: {
+        type: type ?? "eip4361",
+        chainId,
+        aud,
+        domain,
+        version: "1",
+        nonce,
+        iat: new Date().toISOString(),
+      },
       requester: { publicKey },
     });
+
     return { uri, id };
   };
 
@@ -134,17 +129,20 @@ export class AuthEngine extends IAuthEngine {
     this.isInitialized();
     // await this.isValidRespond(params);
 
-    const payload = this.client.pendingRequests.get(respondParams.id);
+    const pendingRequest = this.client.pendingRequests.get(respondParams.id);
 
-    const receiverPublicKey = payload.requester.publicKey;
+    const receiverPublicKey = pendingRequest.requester.publicKey;
     const senderPublicKey = await this.client.core.crypto.generateKeyPair();
     const responseTopic = hashKey(receiverPublicKey);
 
     await this.sendResult<"wc_authRequest">(
-      payload.id,
+      pendingRequest.id,
       responseTopic,
       {
-        payload,
+        header: {
+          t: "eip4361",
+        },
+        payload: pendingRequest.cacaoPayload,
         signature: respondParams.signature,
       },
       {
@@ -280,6 +278,7 @@ export class AuthEngine extends IAuthEngine {
     const version = `Version: ${cacao.version}`;
     const chainId = `Chain ID: ${getDidChainId(cacao.iss)}`;
     const nonce = `Nonce: ${cacao.nonce}`;
+    // FIXME: use the proper `iat` value here once we can handle dynamic sigs in unit tests.
     // const issuedAt = `Issued at: ${cacao.iat}`;
     const issuedAt = `Issued at: `;
     const resources = `\n`;
@@ -304,29 +303,32 @@ export class AuthEngine extends IAuthEngine {
   // ---------- Relay Event Handlers --------------------------------- //
 
   protected onAuthRequest: IAuthEngine["onAuthRequest"] = async (topic, payload) => {
-    const { requester, statement, aud, domain, version, nonce } = payload.params;
+    const {
+      requester,
+      payloadParams: { statement, aud, domain, version, nonce, iat },
+    } = payload.params;
     try {
-      const fullCacao: AuthEngineTypes.CacaoPayload = {
+      const cacaoPayload: AuthEngineTypes.CacaoPayload = {
         iss: this.client.address,
         aud,
         domain,
         version,
         nonce,
-        iat: new Date().toISOString(),
+        iat,
         statement,
       };
 
       await this.client.pendingRequests.set(payload.id, {
         requester,
         id: payload.id,
-        ...fullCacao,
+        cacaoPayload,
       });
 
       this.client.emit("auth_request", {
         id: payload.id,
         topic,
         params: {
-          message: this.constructEip4361Message(fullCacao),
+          message: this.constructEip4361Message(cacaoPayload),
         },
       });
     } catch (err: any) {
@@ -350,11 +352,15 @@ export class AuthEngine extends IAuthEngine {
     if (isJsonRpcResult(response)) {
       const { signature, payload } = response.result;
       const reconstructed = this.constructEip4361Message(payload);
-      const address = ethers.utils.verifyMessage(reconstructed, signature.s);
+      const address = utils.verifyMessage(reconstructed, signature.s);
       const walletAddress = getDidAddress(payload.iss);
 
       if (address !== walletAddress) {
-        this.client.emit("auth_response", { id, topic, params: new Error("Invalid Signature") });
+        this.client.emit("auth_response", {
+          id,
+          topic,
+          params: { message: "Invalid signature", code: -1 },
+        });
       } else {
         this.client.emit("auth_response", { id, topic, params: response });
       }
@@ -367,7 +373,7 @@ export class AuthEngine extends IAuthEngine {
 
   private registerExpirerEvents() {
     this.client.expirer.on(EXPIRER_EVENTS.expired, async (event: ExpirerTypes.Expiration) => {
-      const { topic, id } = parseExpirerTarget(event.target);
+      const { topic } = parseExpirerTarget(event.target);
       if (topic) {
         if (this.client.pairing.keys.includes(topic)) {
           await this.deletePairing(topic);
