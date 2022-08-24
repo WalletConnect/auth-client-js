@@ -1,4 +1,4 @@
-import { ICore, IJsonRpcHistory, IStore } from "@walletconnect/types";
+import { ICore, IJsonRpcHistory, IStore, CoreTypes } from "@walletconnect/types";
 import EventEmitter from "events";
 import { Logger } from "pino";
 import { Expirer } from "../controllers/expirer";
@@ -26,6 +26,23 @@ export declare namespace AuthClientTypes {
     auth_request: BaseEventArgs<any>;
     auth_response: BaseEventArgs<any>;
   }
+
+  interface Options extends CoreTypes.Options {
+    metadata?: Metadata;
+    core?: ICore;
+    iss?: string;
+  }
+
+  interface Metadata {
+    name: string;
+    description: string;
+    url: string;
+    icons: string[];
+    redirect?: {
+      native?: string;
+      universal?: string;
+    };
+  }
 }
 
 export abstract class IAuthClient {
@@ -34,6 +51,7 @@ export abstract class IAuthClient {
   public abstract readonly name: string;
 
   public abstract core: ICore;
+  public abstract metadata: AuthClientTypes.Metadata | undefined;
   public abstract authKeys: IStore<string, any>;
   public abstract pairingTopics: IStore<string, any>;
   public abstract requests: IStore<
@@ -46,7 +64,7 @@ export abstract class IAuthClient {
   public abstract logger: Logger;
   public abstract engine: IAuthEngine;
   public abstract history: IJsonRpcHistory;
-  public abstract address: string;
+  public abstract address: string | undefined;
 
   constructor(public opts?: Record<string, any>) {}
 

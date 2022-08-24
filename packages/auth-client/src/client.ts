@@ -7,7 +7,7 @@ import {
 import { EventEmitter } from "events";
 import pino from "pino";
 
-import { IAuthClient } from "./types";
+import { AuthClientTypes, IAuthClient } from "./types";
 import { JsonRpcHistory, AuthEngine } from "./controllers";
 import { AUTH_CLIENT_PROTOCOL, AUTH_CLIENT_STORAGE_PREFIX, AUTH_CLIENT_VERSION } from "./constants";
 import { Pairing } from "./controllers/pairing";
@@ -19,6 +19,7 @@ export class AuthClient extends IAuthClient {
   public readonly name = "authClient";
 
   public core: IAuthClient["core"];
+  public metadata: IAuthClient["metadata"];
   public logger: IAuthClient["logger"];
   public events: IAuthClient["events"] = new EventEmitter();
   public engine: IAuthClient["engine"];
@@ -30,14 +31,14 @@ export class AuthClient extends IAuthClient {
   public requests: IAuthClient["requests"];
   public address: IAuthClient["address"];
 
-  static async init(opts?: Record<string, any>) {
+  static async init(opts?: AuthClientTypes.Options) {
     const client = new AuthClient(opts);
     await client.initialize();
 
     return client;
   }
 
-  constructor(opts?: Record<string, any>) {
+  constructor(opts?: AuthClientTypes.Options) {
     super(opts);
 
     const logger =
@@ -49,6 +50,7 @@ export class AuthClient extends IAuthClient {
             }),
           );
 
+    this.metadata = opts?.metadata;
     this.core = opts?.core || new Core(opts);
     this.logger = generateChildLogger(logger, this.name);
     this.authKeys = new Store(this.core, this.logger, "authKeys", AUTH_CLIENT_STORAGE_PREFIX);

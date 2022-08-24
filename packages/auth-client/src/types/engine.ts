@@ -1,4 +1,4 @@
-import { RelayerTypes, CryptoTypes } from "@walletconnect/types";
+import { RelayerTypes, CryptoTypes, CoreTypes } from "@walletconnect/types";
 
 import {
   ErrorResponse,
@@ -7,7 +7,7 @@ import {
   JsonRpcResponse,
   JsonRpcResult,
 } from "@walletconnect/jsonrpc-utils";
-import { IAuthClient } from "./client";
+import { AuthClientTypes, IAuthClient } from "./client";
 import { JsonRpcTypes } from "./jsonrpc";
 
 export interface RpcOpts {
@@ -105,6 +105,7 @@ export abstract class IAuthEngine {
 
   public abstract request(
     params: AuthEngineTypes.RequestParams,
+    metadata?: AuthClientTypes.Metadata,
   ): Promise<{ uri: string; id: number }>;
 
   public abstract respond(params: AuthEngineTypes.RespondParams): Promise<void>;

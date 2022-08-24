@@ -66,7 +66,10 @@ export class AuthEngine extends IAuthEngine {
     return pairing;
   };
 
-  public request: IAuthEngine["request"] = async (params: AuthEngineTypes.PayloadParams) => {
+  public request: IAuthEngine["request"] = async (
+    params: AuthEngineTypes.PayloadParams,
+    metadata,
+  ) => {
     this.isInitialized();
     // await this.isValidRequest(params);
 
@@ -120,7 +123,7 @@ export class AuthEngine extends IAuthEngine {
         nonce,
         iat: new Date().toISOString(),
       },
-      requester: { publicKey },
+      requester: { publicKey, metadata },
     });
 
     return { uri, id };
@@ -315,7 +318,7 @@ export class AuthEngine extends IAuthEngine {
     } = payload.params;
     try {
       const cacaoPayload: AuthEngineTypes.CacaoPayload = {
-        iss: this.client.address,
+        iss: this.client.address || "",
         aud,
         domain,
         version,
