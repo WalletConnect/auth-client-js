@@ -12,23 +12,21 @@ import { FIVE_MINUTES, FOUR_WEEKS } from "@walletconnect/time";
 import { ExpirerTypes, RelayerTypes } from "@walletconnect/types";
 import {
   calcExpiry,
-  formatUri,
   generateRandomBytes32,
-  parseUri,
   getInternalError,
   hashKey,
   TYPE_1,
   parseExpirerTarget,
   isExpired,
   getSdkError,
-  isValidRequest,
 } from "@walletconnect/utils";
 import { utils } from "ethers";
 import { JsonRpcTypes, IAuthEngine, AuthEngineTypes } from "../types";
 import { EXPIRER_EVENTS, AUTH_CLIENT_PUBLIC_KEY_NAME, ENGINE_RPC_OPTS } from "../constants";
 import { getDidAddress, getDidChainId } from "../utils/address";
 import { getCompleteRequest, getPendingRequest, getPendingRequests } from "../utils/store";
-import { isValidPairUri, isValidRespond } from "../utils/validators";
+import { isValidPairUri, isValidRequest, isValidRespond } from "../utils/validators";
+import { formatUri, parseUri } from "../utils/uri";
 
 export class AuthEngine extends IAuthEngine {
   private initialized = false;
@@ -52,7 +50,10 @@ export class AuthEngine extends IAuthEngine {
   public pair: IAuthEngine["pair"] = async ({ uri }) => {
     this.isInitialized();
 
-    isValidPairUri(uri);
+    if (!isValidPairUri) {
+      throw new Error("Invalid pair uri");
+    }
+
     const { topic, symKey, relay } = parseUri(uri);
     const expiry = calcExpiry(FOUR_WEEKS);
     const pairing = { relay, expiry, active: true };
@@ -70,7 +71,10 @@ export class AuthEngine extends IAuthEngine {
 
   public request: IAuthEngine["request"] = async (params: AuthEngineTypes.PayloadParams) => {
     this.isInitialized();
-    isValidRequest(params);
+
+    if (!isValidRequest(params)) {
+      throw new Error("Invalid request");
+    }
 
     // SPEC: A creates random symKey S for pairing topic
     const symKey = generateRandomBytes32();
@@ -130,7 +134,10 @@ export class AuthEngine extends IAuthEngine {
 
   public respond: IAuthEngine["respond"] = async (respondParams) => {
     this.isInitialized();
-    isValidRespond(respondParams, this.client.requests);
+
+    if (!isValidRespond(respondParams, this.client.requests)) {
+      throw new Error("Invalid response");
+    }
 
     const pendingRequest = getPendingRequest(this.client.requests, respondParams.id);
 
