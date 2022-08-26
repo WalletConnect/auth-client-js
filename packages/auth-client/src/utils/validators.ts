@@ -30,7 +30,7 @@ export function isValidRespond(
   params: AuthEngineTypes.RespondParams,
   pendingResponses: IStore<number, any>,
 ): boolean {
-  const validId = !!getPendingRequest(pendingResponses, params.id);
+  const validId = getPendingRequest(pendingResponses, params.id);
 
   return !!validId;
 }
