@@ -1,6 +1,18 @@
 import { expect, describe, it, beforeEach, beforeAll, vi, afterEach } from "vitest";
 import ethers from "ethers";
 import { AuthClient } from "../src/client";
+import { AuthEngineTypes } from "../src/types";
+
+const defaultRequestParams: AuthEngineTypes.PayloadParams = {
+  aud: "http://localhost:3000/login",
+  domain: "localhost:3000",
+  chainId: "eip155:1",
+  exp: new Date(new Date().getTime() + 50000).toISOString(),
+  type: "eip4361",
+  nonce: "nonce",
+  iat: new Date().toISOString(),
+  version: "1",
+};
 
 const waitForRelay = async (waitTimeOverride?: number) => {
   await new Promise((resolve) => {
@@ -76,12 +88,7 @@ describe("AuthClient", () => {
     peer.once("auth_request", () => {
       hasPaired = true;
     });
-    const { uri } = await client.request({
-      aud: "http://localhost:3000/login",
-      domain: "localhost:3000",
-      chainId: "chainId",
-      nonce: "nonce",
-    });
+    const { uri } = await client.request(defaultRequestParams);
 
     await peer.pair({ uri });
     await waitForEvent(() => hasPaired);
@@ -102,12 +109,7 @@ describe("AuthClient", () => {
       receivedAuthRequest = true;
     });
 
-    const { uri } = await client.request({
-      aud: "http://localhost:3000/login",
-      domain: "localhost:3000",
-      chainId: "chainId",
-      nonce: "nonce",
-    });
+    const { uri } = await client.request(defaultRequestParams);
 
     await peer.pair({ uri });
 
@@ -135,12 +137,7 @@ describe("AuthClient", () => {
       hasResponded = true;
     });
 
-    const { uri } = await client.request({
-      aud: "http://localhost:3000/login",
-      domain: "localhost:3000",
-      chainId: "chainId",
-      nonce: "nonce",
-    });
+    const { uri } = await client.request(defaultRequestParams);
 
     expect(client.pairing.values.length).to.eql(1);
     expect(client.pairing.values[0].active).to.eql(false);
@@ -178,12 +175,7 @@ describe("AuthClient", () => {
       peerHasResponded = true;
     });
 
-    const { uri } = await client.request({
-      aud,
-      domain: "localhost:3000",
-      chainId: "chainId",
-      nonce: "nonce",
-    });
+    const { uri } = await client.request(defaultRequestParams);
 
     await peer.pair({ uri });
 
@@ -202,12 +194,7 @@ describe("AuthClient", () => {
       receivedAuthRequest = true;
     });
 
-    const { uri } = await client.request({
-      aud,
-      domain: "localhost:3000",
-      chainId: "chainId",
-      nonce: "nonce",
-    });
+    const { uri } = await client.request(defaultRequestParams);
 
     await peer.pair({ uri });
 
@@ -286,12 +273,7 @@ describe("AuthClient", () => {
       peerHasResponded = true;
     });
 
-    const { uri } = await client.request({
-      aud: "http://localhost:3000/login",
-      domain: "localhost:3000",
-      chainId: "chainId",
-      nonce: "nonce",
-    });
+    const { uri } = await client.request(defaultRequestParams);
 
     await peer.pair({ uri });
 
