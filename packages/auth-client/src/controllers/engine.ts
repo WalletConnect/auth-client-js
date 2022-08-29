@@ -76,36 +76,38 @@ export class AuthEngine extends IAuthEngine {
       throw new Error("Invalid request");
     }
 
-    // SPEC: A creates random symKey S for pairing topic
-    const symKey = generateRandomBytes32();
-
-    // SPEC: Pairing topic is the hash of symkey S
-    const pairingTopic = await this.client.core.crypto.setSymKey(symKey);
-
-    const expiry = calcExpiry(FIVE_MINUTES);
+    const existingPairings = this.client.pairing.getAll({ active: true });
     const relay = { protocol: RELAYER_DEFAULT_PROTOCOL };
 
-    // Preparing pairing URI
-    const pairing = { topic: pairingTopic, expiry, relay, active: false };
-    const uri = formatUri({
-      protocol: this.client.protocol,
-      version: this.client.version,
-      topic: pairingTopic,
-      symKey,
-      relay,
-    });
+    // SPEC: A creates random symKey S for pairing topic
 
-    this.client.pairing.set(pairingTopic, pairing);
+    let pairingTopic: string;
+    let symKey = "";
 
-    this.setExpiry(pairingTopic, expiry);
+    if (existingPairings.length > 0) {
+      const pairing = existingPairings[0];
+      pairingTopic = pairing.topic;
+      symKey = this.client.core.crypto.keychain.get(pairingTopic);
+    } else {
+      // SPEC: Pairing topic is the hash of symkey S
+      symKey = generateRandomBytes32();
+      pairingTopic = await this.client.core.crypto.setSymKey(symKey);
+
+      const expiry = calcExpiry(FIVE_MINUTES);
+
+      // Preparing pairing URI
+      const pairing = { topic: pairingTopic, expiry, relay, active: false };
+      await this.client.pairing.set(pairingTopic, pairing);
+
+      this.setExpiry(pairingTopic, expiry);
+    }
 
     // SPEC: A generates keyPair X and generates response topic
     const publicKey = await this.client.core.crypto.generateKeyPair();
     const responseTopic = hashKey(publicKey);
 
-    await this.client.pairingTopics.set(responseTopic, { pairingTopic });
-
     this.client.authKeys.set(AUTH_CLIENT_PUBLIC_KEY_NAME, publicKey);
+    await this.client.pairingTopics.set(responseTopic, { pairingTopic });
 
     // Subscribe to response topic
     await this.client.core.relayer.subscribe(responseTopic);
@@ -128,6 +130,14 @@ export class AuthEngine extends IAuthEngine {
         iat: new Date().toISOString(),
       },
       requester: { publicKey, metadata: this.client.metadata },
+    });
+
+    const uri = formatUri({
+      protocol: this.client.protocol,
+      version: this.client.version,
+      topic: pairingTopic,
+      symKey,
+      relay,
     });
 
     return { uri, id };

@@ -21,6 +21,8 @@ export function isValidRequest(params: AuthEngineTypes.PayloadParams): boolean {
   const hasNonce = !!params.nonce;
   const includedType = params.type === "eip4361";
 
+  console.log({ validAudience, validChainId, domainInAud, validExpiry, hasNonce, includedType });
+
   return !!(
     validAudience &&
     validChainId &&
