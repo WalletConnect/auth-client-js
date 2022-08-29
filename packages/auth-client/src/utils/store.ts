@@ -18,6 +18,6 @@ export function getPendingRequest(store: IAuthClient["requests"], id: number) {
   ) as AuthEngineTypes.PendingRequest;
 }
 
-export function getCompleteRequest(store: IAuthClient["requests"], id: number) {
+export function getCompleteResponse(store: IAuthClient["requests"], id: number) {
   return getCompleteRequests(store).find((request) => request.id === id) as AuthEngineTypes.Cacao;
 }

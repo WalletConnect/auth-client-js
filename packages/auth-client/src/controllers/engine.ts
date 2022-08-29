@@ -26,7 +26,8 @@ import { utils } from "ethers";
 import { JsonRpcTypes, IAuthEngine, AuthEngineTypes } from "../types";
 import { EXPIRER_EVENTS, AUTH_CLIENT_PUBLIC_KEY_NAME, ENGINE_RPC_OPTS } from "../constants";
 import { getDidAddress, getDidChainId } from "../utils/address";
-import { getCompleteRequest, getPendingRequest, getPendingRequests } from "../utils/store";
+import { getCompleteResponse, getPendingRequest, getPendingRequests } from "../utils/store";
+import { warn } from "console";
 
 export class AuthEngine extends IAuthEngine {
   private initialized = false;
@@ -136,6 +137,16 @@ export class AuthEngine extends IAuthEngine {
     const receiverPublicKey = pendingRequest.requester.publicKey;
     const senderPublicKey = await this.client.core.crypto.generateKeyPair();
     const responseTopic = hashKey(receiverPublicKey);
+    const encodeOpts = {
+      type: TYPE_1,
+      receiverPublicKey,
+      senderPublicKey,
+    };
+
+    if ("code" in respondParams) {
+      await this.sendError(pendingRequest.id, responseTopic, respondParams, encodeOpts);
+      return;
+    }
 
     const cacao: AuthEngineTypes.Cacao = {
       header: {
@@ -145,11 +156,12 @@ export class AuthEngine extends IAuthEngine {
       signature: respondParams.signature,
     };
 
-    const id = await this.sendResult<"wc_authRequest">(pendingRequest.id, responseTopic, cacao, {
-      type: TYPE_1,
-      receiverPublicKey,
-      senderPublicKey,
-    });
+    const id = await this.sendResult<"wc_authRequest">(
+      pendingRequest.id,
+      responseTopic,
+      cacao,
+      encodeOpts,
+    );
 
     await this.client.requests.set(id, { id, ...cacao });
   };
@@ -159,8 +171,8 @@ export class AuthEngine extends IAuthEngine {
     return pendingRequests;
   };
 
-  public getRequest: IAuthEngine["getRequest"] = ({ id }) => {
-    const request = getCompleteRequest(this.client.requests, id);
+  public getResponse: IAuthEngine["getResponse"] = ({ id }) => {
+    const request = getCompleteResponse(this.client.requests, id);
 
     return request;
   };
@@ -198,6 +210,7 @@ export class AuthEngine extends IAuthEngine {
     const message = await this.client.core.crypto.encode(topic, payload, encodeOpts);
     const record = await this.client.history.get(topic, id);
     const rpcOpts = ENGINE_RPC_OPTS[record.request.method].res;
+
     await this.client.core.relayer.publish(topic, message, rpcOpts);
     await this.client.history.resolve(payload);
 
@@ -209,8 +222,11 @@ export class AuthEngine extends IAuthEngine {
     const message = await this.client.core.crypto.encode(topic, payload, encodeOpts);
     const record = await this.client.history.get(topic, id);
     const rpcOpts = ENGINE_RPC_OPTS[record.request.method].res;
+
     await this.client.core.relayer.publish(topic, message, rpcOpts);
     await this.client.history.resolve(payload);
+
+    return payload.id;
   };
 
   protected cleanup: IAuthEngine["cleanup"] = async () => {

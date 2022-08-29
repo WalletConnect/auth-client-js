@@ -89,10 +89,12 @@ export declare namespace AuthEngineTypes {
     message: string;
   }
 
-  interface RespondParams {
+  interface ResultResponse {
     id: number;
     signature: CacaoSignature;
   }
+
+  type RespondParams = ResultResponse | ({ id: number } & ErrorResponse);
 }
 
 // TODO: define missing param and data types
@@ -111,7 +113,7 @@ export abstract class IAuthEngine {
 
   public abstract getPendingRequests(): Record<number, AuthEngineTypes.PendingRequest>;
 
-  public abstract getRequest(params: { id: number }): AuthEngineTypes.Cacao;
+  public abstract getResponse(params: { id: number }): AuthEngineTypes.Cacao;
 
   // ---------- Protected Helpers --------------------------------------- //
 
@@ -134,7 +136,7 @@ export abstract class IAuthEngine {
     topic: string,
     error: ErrorResponse,
     opts?: CryptoTypes.EncodeOptions,
-  ): Promise<void>;
+  ): Promise<number>;
 
   protected abstract setExpiry(topic: string, expiry: number): Promise<void>;
 
