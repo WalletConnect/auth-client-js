@@ -106,7 +106,7 @@ export class AuthEngine extends IAuthEngine {
 
     // SPEC: A will construct an authentication request.
     // TODO: Fill out the rest of the properties here
-    const { chainId, aud, domain, nonce, type } = params;
+    const { chainId, statement, aud, domain, nonce, type } = params;
 
     // SPEC: A encrypts reuqest with symKey S
     // SPEC: A publishes encrypted request to topic
@@ -114,6 +114,7 @@ export class AuthEngine extends IAuthEngine {
       payloadParams: {
         type: type ?? "eip4361",
         chainId,
+        statement,
         aud,
         domain,
         version: "1",
