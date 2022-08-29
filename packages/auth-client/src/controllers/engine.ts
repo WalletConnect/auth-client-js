@@ -27,7 +27,6 @@ import { JsonRpcTypes, IAuthEngine, AuthEngineTypes } from "../types";
 import { EXPIRER_EVENTS, AUTH_CLIENT_PUBLIC_KEY_NAME, ENGINE_RPC_OPTS } from "../constants";
 import { getDidAddress, getDidChainId } from "../utils/address";
 import { getCompleteResponse, getPendingRequest, getPendingRequests } from "../utils/store";
-import { warn } from "console";
 
 export class AuthEngine extends IAuthEngine {
   private initialized = false;
