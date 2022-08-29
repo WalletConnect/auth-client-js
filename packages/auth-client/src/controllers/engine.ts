@@ -257,9 +257,13 @@ export class AuthEngine extends IAuthEngine {
         const receiverPublicKey = this.client.authKeys.keys.includes(AUTH_CLIENT_PUBLIC_KEY_NAME)
           ? this.client.authKeys.get(AUTH_CLIENT_PUBLIC_KEY_NAME)
           : "";
-        const payload = await this.client.core.crypto.decode(topic, message, {
-          receiverPublicKey,
-        });
+
+        const opts = receiverPublicKey
+          ? {
+              receiverPublicKey,
+            }
+          : {};
+        const payload = await this.client.core.crypto.decode(topic, message, opts);
         if (isJsonRpcRequest(payload)) {
           this.client.history.set(topic, payload);
           this.onRelayEventRequest({ topic, payload });
