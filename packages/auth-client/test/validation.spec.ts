@@ -49,7 +49,7 @@ describe("Validation", () => {
       expect(isValid).to.eql(false);
     });
     it("Validates bad case (topic)", () => {
-      const isValid = isValidPairUri("wc:?rely-protocol=irn&symKey=key");
+      const isValid = isValidPairUri("wc:?relay-protocol=irn&symKey=key");
       expect(isValid).to.eql(false);
     });
   });
