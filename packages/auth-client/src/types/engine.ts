@@ -1,4 +1,4 @@
-import { RelayerTypes, CryptoTypes, CoreTypes } from "@walletconnect/types";
+import { RelayerTypes, CryptoTypes } from "@walletconnect/types";
 
 import {
   ErrorResponse,
@@ -7,7 +7,7 @@ import {
   JsonRpcResponse,
   JsonRpcResult,
 } from "@walletconnect/jsonrpc-utils";
-import { AuthClientTypes, IAuthClient } from "./client";
+import { IAuthClient } from "./client";
 import { JsonRpcTypes } from "./jsonrpc";
 
 export interface RpcOpts {
