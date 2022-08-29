@@ -28,7 +28,8 @@
     "test:pre": "rm -rf ./test/test.db",
     "test:run": "vitest run --dir test",
     "test": "npm run test:pre; npm run test:run",
-    "test:watch": "vitest watch --dir test"
+    "test:watch": "vitest watch --dir test",
+    "prepublishOnly": "npm run build"
   },
   "engines": {
     "node": "16"
