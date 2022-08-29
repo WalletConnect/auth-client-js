@@ -44,8 +44,12 @@ describe("Validation", () => {
       const isValid = isValidPairUri("wc:auth-foo@2?relay-protocol=iridium&symKey=key");
       expect(isValid).to.eql(true);
     });
-    it("Validates bad case", () => {
-      const isValid = isValidPairUri("wc:foo@2?relay-protocol=iridium&symKey=key");
+    it("Validates bad case (params)", () => {
+      const isValid = isValidPairUri("wc:foo@2?rely-protocol=irn&symkey=key");
+      expect(isValid).to.eql(false);
+    });
+    it("Validates bad case (topic)", () => {
+      const isValid = isValidPairUri("wc:?rely-protocol=irn&symKey=key");
       expect(isValid).to.eql(false);
     });
   });

@@ -3,9 +3,14 @@ import { isValidChainId, isValidUrl } from "@walletconnect/utils";
 import { AuthEngineTypes } from "../types";
 import { getPendingRequest } from "./store";
 
-export function isValidPairUri(uri: string) {
-  const uriRegex = /wc:auth-.*?.*symKey=.*/;
-  return uriRegex.test(uri);
+export function isValidPairUri(uri: string): boolean {
+  const url = new URL(uri);
+  const validProtocol = url.protocol === "wc:";
+  const hasTopic = !!url.pathname;
+  const hasSymKey = !!url.searchParams.get("symKey");
+  const hasRelayProtocol = !!url.searchParams.get("relay-protocol");
+
+  return !!(validProtocol && hasTopic && hasSymKey && hasRelayProtocol);
 }
 
 export function isValidRequest(params: AuthEngineTypes.PayloadParams): boolean {
