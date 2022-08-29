@@ -11,6 +11,7 @@
 - `prettier` - Runs [prettier](https://prettier.io/) checks
 - `build` - Builds all packages
 - `test` - Tests all packages
+- `npm-publish` - Publishes packages to NPM. Requires an OTP code to be input on publish.
 
 ## Unit Tests
 
