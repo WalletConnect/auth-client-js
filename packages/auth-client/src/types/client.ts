@@ -58,6 +58,7 @@ export abstract class IAuthClient {
     number,
     { id: number } & (AuthEngineTypes.Cacao | AuthEngineTypes.PendingRequest)
   >;
+
   public abstract pairing: Pairing;
   public abstract expirer: Expirer;
   public abstract events: EventEmitter;
