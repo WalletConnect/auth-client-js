@@ -220,6 +220,58 @@ describe("AuthClient", () => {
     expect(Object.values(requests)[0].cacaoPayload.aud).to.eql(aud);
   });
 
+  it("receives metadata", async () => {
+    const metadataName = "Foo";
+    let receivedMetadataName: string;
+    client = await AuthClient.init({
+      logger: "error",
+      relayUrl: "ws://0.0.0.0:5555",
+      projectId: undefined,
+      metadata: {
+        name: metadataName,
+        description: "description",
+        icons: [],
+        url: "url",
+      },
+      storageOptions: {
+        database: ":memory:",
+      },
+    });
+
+    let hasResponded = false;
+    peer.once("auth_request", async (args) => {
+      receivedMetadataName = args.params.requester?.metadata?.name;
+      const signature = await wallet.signMessage(args.params.message);
+      await peer.respond({
+        id: args.id,
+        signature: {
+          s: signature,
+          t: "eip191",
+        },
+      });
+      hasResponded = true;
+    });
+
+    const { uri } = await client.request({
+      aud: "http://localhost:3000/login",
+      domain: "localhost:3000",
+      chainId: "chainId",
+      nonce: "nonce",
+    });
+
+    expect(client.pairing.values.length).to.eql(1);
+    expect(client.pairing.values[0].active).to.eql(false);
+
+    await peer.pair({ uri });
+
+    await waitForEvent(() => hasResponded);
+
+    expect(client.pairing.values[0].active).to.eql(true);
+
+    expect(hasResponded).to.eql(true);
+    expect(receivedMetadataName).to.eql(metadataName);
+  });
+
   it("expires pairings", async () => {
     let peerHasResponded = false;
     peer.once("auth_request", async (args) => {

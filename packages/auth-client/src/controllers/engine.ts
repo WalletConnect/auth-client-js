@@ -121,7 +121,7 @@ export class AuthEngine extends IAuthEngine {
         nonce,
         iat: new Date().toISOString(),
       },
-      requester: { publicKey },
+      requester: { publicKey, metadata: this.client.metadata },
     });
 
     return { uri, id };
@@ -316,7 +316,7 @@ export class AuthEngine extends IAuthEngine {
     } = payload.params;
     try {
       const cacaoPayload: AuthEngineTypes.CacaoPayload = {
-        iss: this.client.address,
+        iss: this.client.address || "",
         aud,
         domain,
         version,
@@ -338,6 +338,7 @@ export class AuthEngine extends IAuthEngine {
         id: payload.id,
         topic,
         params: {
+          requester,
           message: this.constructEip4361Message(cacaoPayload),
         },
       });

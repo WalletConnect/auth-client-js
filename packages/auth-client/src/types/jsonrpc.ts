@@ -1,3 +1,4 @@
+import { AuthClientTypes } from "./client";
 import { AuthEngineTypes } from "./engine";
 
 export declare namespace JsonRpcTypes {
@@ -9,8 +10,7 @@ export declare namespace JsonRpcTypes {
       payloadParams: AuthEngineTypes.PayloadParams;
       requester: {
         publicKey: string;
-        // TODO: define metadata type and enable param.
-        // metadata: Metadata;
+        metadata?: AuthClientTypes.Metadata;
       };
     };
   }
