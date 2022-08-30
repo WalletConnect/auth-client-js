@@ -142,7 +142,7 @@ export class AuthEngine extends IAuthEngine {
       senderPublicKey,
     };
 
-    if ("code" in respondParams) {
+    if ("error" in respondParams) {
       await this.sendError(pendingRequest.id, responseTopic, respondParams, encodeOpts);
       return;
     }
@@ -216,8 +216,8 @@ export class AuthEngine extends IAuthEngine {
     return payload.id;
   };
 
-  protected sendError: IAuthEngine["sendError"] = async (id, topic, error, encodeOpts) => {
-    const payload = formatJsonRpcError(id, error);
+  protected sendError: IAuthEngine["sendError"] = async (id, topic, params, encodeOpts) => {
+    const payload = formatJsonRpcError(id, params.error);
     const message = await this.client.core.crypto.encode(topic, payload, encodeOpts);
     const record = await this.client.history.get(topic, id);
     const rpcOpts = ENGINE_RPC_OPTS[record.request.method].res;

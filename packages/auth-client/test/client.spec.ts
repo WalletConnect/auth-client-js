@@ -122,8 +122,10 @@ describe("AuthClient", () => {
     peer.once("auth_request", async (args) => {
       await peer.respond({
         id: args.id,
-        code: 14001,
-        message: "Can not login",
+        error: {
+          code: 14001,
+          message: "Can not login",
+        },
       });
     });
 
