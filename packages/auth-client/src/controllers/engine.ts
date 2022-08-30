@@ -76,36 +76,43 @@ export class AuthEngine extends IAuthEngine {
       throw new Error("Invalid request");
     }
 
-    // SPEC: A creates random symKey S for pairing topic
-    const symKey = generateRandomBytes32();
-
-    // SPEC: Pairing topic is the hash of symkey S
-    const pairingTopic = await this.client.core.crypto.setSymKey(symKey);
-
-    const expiry = calcExpiry(FIVE_MINUTES);
+    const existingPairings = this.client.pairing.getAll({ active: true });
     const relay = { protocol: RELAYER_DEFAULT_PROTOCOL };
 
-    // Preparing pairing URI
-    const pairing = { topic: pairingTopic, expiry, relay, active: false };
-    const uri = formatUri({
-      protocol: this.client.protocol,
-      version: this.client.version,
-      topic: pairingTopic,
-      symKey,
-      relay,
-    });
+    // SPEC: A creates random symKey S for pairing topic
 
-    this.client.pairing.set(pairingTopic, pairing);
+    let pairingTopic: string;
+    let symKey = "";
+    let publicKey: string;
 
-    this.setExpiry(pairingTopic, expiry);
+    if (existingPairings.length > 0) {
+      const pairing = existingPairings[0];
+      pairingTopic = pairing.topic;
+      symKey = this.client.core.crypto.keychain.get(pairingTopic);
+      publicKey = this.client.authKeys.get(AUTH_CLIENT_PUBLIC_KEY_NAME).publicKey;
+    } else {
+      // SPEC: A generates keyPair X and generates response topic
+      symKey = generateRandomBytes32();
 
-    // SPEC: A generates keyPair X and generates response topic
-    const publicKey = await this.client.core.crypto.generateKeyPair();
+      // SPEC: Pairing topic is the hash of symkey S
+      pairingTopic = await this.client.core.crypto.setSymKey(symKey);
+
+      const expiry = calcExpiry(FIVE_MINUTES);
+
+      // Preparing pairing URI
+      const pairing = { topic: pairingTopic, expiry, relay, active: false };
+      await this.client.pairing.set(pairingTopic, pairing);
+
+      this.setExpiry(pairingTopic, expiry);
+
+      publicKey = await this.client.core.crypto.generateKeyPair();
+    }
+
+    this.client.authKeys.set(AUTH_CLIENT_PUBLIC_KEY_NAME, { publicKey });
+
     const responseTopic = hashKey(publicKey);
 
     await this.client.pairingTopics.set(responseTopic, { pairingTopic });
-
-    this.client.authKeys.set(AUTH_CLIENT_PUBLIC_KEY_NAME, publicKey);
 
     // Subscribe to response topic
     await this.client.core.relayer.subscribe(responseTopic);
@@ -128,6 +135,14 @@ export class AuthEngine extends IAuthEngine {
         iat: new Date().toISOString(),
       },
       requester: { publicKey, metadata: this.client.metadata },
+    });
+
+    const uri = formatUri({
+      protocol: this.client.protocol,
+      version: this.client.version,
+      topic: pairingTopic,
+      symKey,
+      relay,
     });
 
     return { uri, id };
@@ -244,12 +259,18 @@ export class AuthEngine extends IAuthEngine {
       RELAYER_EVENTS.message,
       async (event: RelayerTypes.MessageEvent) => {
         const { topic, message } = event;
+
         const receiverPublicKey = this.client.authKeys.keys.includes(AUTH_CLIENT_PUBLIC_KEY_NAME)
-          ? this.client.authKeys.get(AUTH_CLIENT_PUBLIC_KEY_NAME)
+          ? this.client.authKeys.get(AUTH_CLIENT_PUBLIC_KEY_NAME).publicKey
           : "";
-        const payload = await this.client.core.crypto.decode(topic, message, {
-          receiverPublicKey,
-        });
+
+        const opts = receiverPublicKey
+          ? {
+              receiverPublicKey,
+            }
+          : {};
+
+        const payload = await this.client.core.crypto.decode(topic, message, opts);
         if (isJsonRpcRequest(payload)) {
           this.client.history.set(topic, payload);
           this.onRelayEventRequest({ topic, payload });

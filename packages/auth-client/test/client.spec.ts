@@ -2,6 +2,7 @@ import { expect, describe, it, beforeEach, beforeAll, vi, afterEach } from "vite
 import ethers from "ethers";
 import { AuthClient } from "../src/client";
 import { AuthEngineTypes } from "../src/types";
+import { hashKey } from "@walletconnect/utils";
 
 const defaultRequestParams: AuthEngineTypes.PayloadParams = {
   aud: "http://localhost:3000/login",
@@ -100,6 +101,42 @@ describe("AuthClient", () => {
     // Ensure each client published once (request and respond)
     expect(client.history.records.size).to.eql(peer.history.records.size);
     expect(client.history.records.size).to.eql(1);
+  });
+
+  it("Uses existing pairings", async () => {
+    let hasPaired = false;
+
+    let uri2: string;
+
+    peer.on("auth_request", async (args) => {
+      hasPaired = true;
+
+      const signature = await wallet.signMessage(args.params.message);
+      await peer.respond({
+        id: args.id,
+        signature: {
+          s: signature,
+          t: "eip191",
+        },
+      });
+    });
+
+    client.on("auth_response", async () => {
+      const { uri } = await client.request(defaultRequestParams);
+      uri2 = uri;
+    });
+
+    const { uri: uri1 } = await client.request(defaultRequestParams);
+
+    await peer.pair({ uri: uri1 });
+
+    await waitForEvent(() => !!uri2);
+
+    expect(uri1).to.eql(uri2);
+
+    // Ensure they paired
+    expect(client.pairing.keys).to.eql(peer.pairing.keys);
+    expect(client.pairing.keys.length).to.eql(1);
   });
 
   it("handles incoming auth requests", async () => {
@@ -239,12 +276,7 @@ describe("AuthClient", () => {
       hasResponded = true;
     });
 
-    const { uri } = await client.request({
-      aud: "http://localhost:3000/login",
-      domain: "localhost:3000",
-      chainId: "chainId",
-      nonce: "nonce",
-    });
+    const { uri } = await client.request(defaultRequestParams);
 
     expect(client.pairing.values.length).to.eql(1);
     expect(client.pairing.values[0].active).to.eql(false);
