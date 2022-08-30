@@ -1,6 +1,19 @@
 import { expect, describe, it, beforeEach, beforeAll, vi, afterEach } from "vitest";
 import ethers from "ethers";
 import { AuthClient } from "../src/client";
+import { AuthEngineTypes } from "../src/types";
+import { hashKey } from "@walletconnect/utils";
+
+const defaultRequestParams: AuthEngineTypes.PayloadParams = {
+  aud: "http://localhost:3000/login",
+  domain: "localhost:3000",
+  chainId: "eip155:1",
+  exp: new Date(new Date().getTime() + 50000).toISOString(),
+  type: "eip4361",
+  nonce: "nonce",
+  iat: new Date().toISOString(),
+  version: "1",
+};
 
 const waitForRelay = async (waitTimeOverride?: number) => {
   await new Promise((resolve) => {
@@ -76,12 +89,7 @@ describe("AuthClient", () => {
     peer.once("auth_request", () => {
       hasPaired = true;
     });
-    const { uri } = await client.request({
-      aud: "http://localhost:3000/login",
-      domain: "localhost:3000",
-      chainId: "chainId",
-      nonce: "nonce",
-    });
+    const { uri } = await client.request(defaultRequestParams);
 
     await peer.pair({ uri });
     await waitForEvent(() => hasPaired);
@@ -95,6 +103,42 @@ describe("AuthClient", () => {
     expect(client.history.records.size).to.eql(1);
   });
 
+  it("Uses existing pairings", async () => {
+    let hasPaired = false;
+
+    let uri2: string;
+
+    peer.on("auth_request", async (args) => {
+      hasPaired = true;
+
+      const signature = await wallet.signMessage(args.params.message);
+      await peer.respond({
+        id: args.id,
+        signature: {
+          s: signature,
+          t: "eip191",
+        },
+      });
+    });
+
+    client.on("auth_response", async () => {
+      const { uri } = await client.request(defaultRequestParams);
+      uri2 = uri;
+    });
+
+    const { uri: uri1 } = await client.request(defaultRequestParams);
+
+    await peer.pair({ uri: uri1 });
+
+    await waitForEvent(() => !!uri2);
+
+    expect(uri1).to.eql(uri2);
+
+    // Ensure they paired
+    expect(client.pairing.keys).to.eql(peer.pairing.keys);
+    expect(client.pairing.keys.length).to.eql(1);
+  });
+
   it("handles incoming auth requests", async () => {
     let receivedAuthRequest = false;
 
@@ -102,12 +146,7 @@ describe("AuthClient", () => {
       receivedAuthRequest = true;
     });
 
-    const { uri } = await client.request({
-      aud: "http://localhost:3000/login",
-      domain: "localhost:3000",
-      chainId: "chainId",
-      nonce: "nonce",
-    });
+    const { uri } = await client.request(defaultRequestParams);
 
     await peer.pair({ uri });
 
@@ -173,12 +212,7 @@ describe("AuthClient", () => {
       hasResponded = true;
     });
 
-    const { uri } = await client.request({
-      aud: "http://localhost:3000/login",
-      domain: "localhost:3000",
-      chainId: "chainId",
-      nonce: "nonce",
-    });
+    const { uri } = await client.request(defaultRequestParams);
 
     expect(client.pairing.values.length).to.eql(1);
     expect(client.pairing.values[0].active).to.eql(false);
@@ -216,12 +250,7 @@ describe("AuthClient", () => {
       peerHasResponded = true;
     });
 
-    const { uri } = await client.request({
-      aud,
-      domain: "localhost:3000",
-      chainId: "chainId",
-      nonce: "nonce",
-    });
+    const { uri } = await client.request(defaultRequestParams);
 
     await peer.pair({ uri });
 
@@ -240,12 +269,7 @@ describe("AuthClient", () => {
       receivedAuthRequest = true;
     });
 
-    const { uri } = await client.request({
-      aud,
-      domain: "localhost:3000",
-      chainId: "chainId",
-      nonce: "nonce",
-    });
+    const { uri } = await client.request(defaultRequestParams);
 
     await peer.pair({ uri });
 
@@ -290,12 +314,7 @@ describe("AuthClient", () => {
       hasResponded = true;
     });
 
-    const { uri } = await client.request({
-      aud: "http://localhost:3000/login",
-      domain: "localhost:3000",
-      chainId: "chainId",
-      nonce: "nonce",
-    });
+    const { uri } = await client.request(defaultRequestParams);
 
     expect(client.pairing.values.length).to.eql(1);
     expect(client.pairing.values[0].active).to.eql(false);
@@ -324,12 +343,7 @@ describe("AuthClient", () => {
       peerHasResponded = true;
     });
 
-    const { uri } = await client.request({
-      aud: "http://localhost:3000/login",
-      domain: "localhost:3000",
-      chainId: "chainId",
-      nonce: "nonce",
-    });
+    const { uri } = await client.request(defaultRequestParams);
 
     await peer.pair({ uri });
 
