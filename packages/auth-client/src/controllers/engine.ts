@@ -83,7 +83,6 @@ export class AuthEngine extends IAuthEngine {
 
     let pairingTopic: string;
     let symKey = "";
-    // SPEC: A generates keyPair X and generates response topic
     let publicKey: string;
 
     if (existingPairings.length > 0) {
@@ -92,8 +91,10 @@ export class AuthEngine extends IAuthEngine {
       symKey = this.client.core.crypto.keychain.get(pairingTopic);
       publicKey = this.client.authKeys.get(AUTH_CLIENT_PUBLIC_KEY_NAME).publicKey;
     } else {
-      // SPEC: Pairing topic is the hash of symkey S
+      // SPEC: A generates keyPair X and generates response topic
       symKey = generateRandomBytes32();
+
+      // SPEC: Pairing topic is the hash of symkey S
       pairingTopic = await this.client.core.crypto.setSymKey(symKey);
 
       const expiry = calcExpiry(FIVE_MINUTES);
