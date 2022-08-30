@@ -2,6 +2,7 @@ import { expect, describe, it, beforeEach, beforeAll, vi, afterEach } from "vite
 import ethers from "ethers";
 import { AuthClient } from "../src/client";
 import { AuthEngineTypes } from "../src/types";
+import { hashKey } from "@walletconnect/utils";
 
 const defaultRequestParams: AuthEngineTypes.PayloadParams = {
   aud: "http://localhost:3000/login",
@@ -126,7 +127,6 @@ describe("AuthClient", () => {
     });
 
     const { uri: uri1 } = await client.request(defaultRequestParams);
-    console.log("paired");
 
     await peer.pair({ uri: uri1 });
 
@@ -137,10 +137,6 @@ describe("AuthClient", () => {
     // Ensure they paired
     expect(client.pairing.keys).to.eql(peer.pairing.keys);
     expect(client.pairing.keys.length).to.eql(1);
-
-    // Ensure each client published once (request and respond)
-    expect(client.history.records.size).to.eql(peer.history.records.size);
-    expect(client.history.records.size).to.eql(2);
   });
 
   it("handles incoming auth requests", async () => {

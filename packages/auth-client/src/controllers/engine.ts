@@ -83,11 +83,14 @@ export class AuthEngine extends IAuthEngine {
 
     let pairingTopic: string;
     let symKey = "";
+    // SPEC: A generates keyPair X and generates response topic
+    let publicKey: string;
 
     if (existingPairings.length > 0) {
       const pairing = existingPairings[0];
       pairingTopic = pairing.topic;
       symKey = this.client.core.crypto.keychain.get(pairingTopic);
+      publicKey = this.client.authKeys.get(AUTH_CLIENT_PUBLIC_KEY_NAME);
     } else {
       // SPEC: Pairing topic is the hash of symkey S
       symKey = generateRandomBytes32();
@@ -100,13 +103,16 @@ export class AuthEngine extends IAuthEngine {
       await this.client.pairing.set(pairingTopic, pairing);
 
       this.setExpiry(pairingTopic, expiry);
+
+      publicKey = await this.client.core.crypto.generateKeyPair();
     }
 
-    // SPEC: A generates keyPair X and generates response topic
-    const publicKey = await this.client.core.crypto.generateKeyPair();
+    if (!this.client.authKeys.keys.includes(AUTH_CLIENT_PUBLIC_KEY_NAME)) {
+      this.client.authKeys.set(AUTH_CLIENT_PUBLIC_KEY_NAME, publicKey);
+    }
+
     const responseTopic = hashKey(publicKey);
 
-    this.client.authKeys.set(AUTH_CLIENT_PUBLIC_KEY_NAME, publicKey);
     await this.client.pairingTopics.set(responseTopic, { pairingTopic });
 
     // Subscribe to response topic
@@ -254,6 +260,7 @@ export class AuthEngine extends IAuthEngine {
       RELAYER_EVENTS.message,
       async (event: RelayerTypes.MessageEvent) => {
         const { topic, message } = event;
+
         const receiverPublicKey = this.client.authKeys.keys.includes(AUTH_CLIENT_PUBLIC_KEY_NAME)
           ? this.client.authKeys.get(AUTH_CLIENT_PUBLIC_KEY_NAME)
           : "";
@@ -263,6 +270,7 @@ export class AuthEngine extends IAuthEngine {
               receiverPublicKey,
             }
           : {};
+
         const payload = await this.client.core.crypto.decode(topic, message, opts);
         if (isJsonRpcRequest(payload)) {
           this.client.history.set(topic, payload);
