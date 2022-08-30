@@ -90,7 +90,7 @@ export class AuthEngine extends IAuthEngine {
       const pairing = existingPairings[0];
       pairingTopic = pairing.topic;
       symKey = this.client.core.crypto.keychain.get(pairingTopic);
-      publicKey = this.client.authKeys.get(AUTH_CLIENT_PUBLIC_KEY_NAME);
+      publicKey = this.client.authKeys.get(AUTH_CLIENT_PUBLIC_KEY_NAME).publicKey;
     } else {
       // SPEC: Pairing topic is the hash of symkey S
       symKey = generateRandomBytes32();
@@ -107,9 +107,7 @@ export class AuthEngine extends IAuthEngine {
       publicKey = await this.client.core.crypto.generateKeyPair();
     }
 
-    if (!this.client.authKeys.keys.includes(AUTH_CLIENT_PUBLIC_KEY_NAME)) {
-      this.client.authKeys.set(AUTH_CLIENT_PUBLIC_KEY_NAME, publicKey);
-    }
+    this.client.authKeys.set(AUTH_CLIENT_PUBLIC_KEY_NAME, { publicKey });
 
     const responseTopic = hashKey(publicKey);
 
@@ -262,7 +260,7 @@ export class AuthEngine extends IAuthEngine {
         const { topic, message } = event;
 
         const receiverPublicKey = this.client.authKeys.keys.includes(AUTH_CLIENT_PUBLIC_KEY_NAME)
-          ? this.client.authKeys.get(AUTH_CLIENT_PUBLIC_KEY_NAME)
+          ? this.client.authKeys.get(AUTH_CLIENT_PUBLIC_KEY_NAME).publicKey
           : "";
 
         const opts = receiverPublicKey
