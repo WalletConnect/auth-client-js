@@ -173,12 +173,7 @@ describe("AuthClient", () => {
       hasResponded = true;
     });
 
-    const { uri } = await client.request({
-      aud: "http://localhost:3000/login",
-      domain: "localhost:3000",
-      chainId: "chainId",
-      nonce: "nonce",
-    });
+    const { uri } = await client.request(defaultRequestParams);
 
     expect(client.pairing.values.length).to.eql(1);
     expect(client.pairing.values[0].active).to.eql(false);
