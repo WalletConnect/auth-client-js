@@ -155,7 +155,40 @@ describe("AuthClient", () => {
     expect(peer.requests.length).to.eql(1);
   });
 
-  it("handles responses", async () => {
+  it("handles error responses", async () => {
+    let hasResponded = false;
+    let errorResponse = false;
+    peer.once("auth_request", async (args) => {
+      await peer.respond({
+        id: args.id,
+        error: {
+          code: 14001,
+          message: "Can not login",
+        },
+      });
+    });
+
+    client.once("auth_response", (args) => {
+      errorResponse = Boolean(args.params.error.code);
+      hasResponded = true;
+    });
+
+    const { uri } = await client.request(defaultRequestParams);
+
+    expect(client.pairing.values.length).to.eql(1);
+    expect(client.pairing.values[0].active).to.eql(false);
+
+    await peer.pair({ uri });
+
+    await waitForEvent(() => hasResponded);
+
+    expect(client.pairing.values[0].active).to.eql(true);
+
+    expect(hasResponded).to.eql(true);
+    expect(errorResponse).to.eql(true);
+  });
+
+  it("handles successful responses", async () => {
     let hasResponded = false;
     let successfulResponse = false;
     peer.once("auth_request", async (args) => {
@@ -218,7 +251,7 @@ describe("AuthClient", () => {
 
     await waitForEvent(() => peerHasResponded);
 
-    const request = client.getRequest({ id });
+    const request = client.getResponse({ id });
 
     expect(request.payload.aud).to.eql(aud);
   });

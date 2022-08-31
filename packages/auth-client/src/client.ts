@@ -135,9 +135,9 @@ export class AuthClient extends IAuthClient {
     }
   };
 
-  public getRequest: IAuthClient["getRequest"] = (params) => {
+  public getResponse: IAuthClient["getResponse"] = (params) => {
     try {
-      return this.engine.getRequest(params);
+      return this.engine.getResponse(params);
     } catch (error: any) {
       this.logger.error(error.message);
       throw error;

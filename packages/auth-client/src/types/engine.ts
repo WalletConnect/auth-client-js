@@ -1,7 +1,7 @@
 import { RelayerTypes, CryptoTypes } from "@walletconnect/types";
 
 import {
-  ErrorResponse,
+  ErrorResponse as CommonErrorResponse,
   JsonRpcError,
   JsonRpcRequest,
   JsonRpcResponse,
@@ -89,10 +89,17 @@ export declare namespace AuthEngineTypes {
     message: string;
   }
 
-  interface RespondParams {
+  interface ResultResponse {
     id: number;
     signature: CacaoSignature;
   }
+
+  interface ErrorResponse {
+    id: number;
+    error: CommonErrorResponse;
+  }
+
+  type RespondParams = ResultResponse | ErrorResponse;
 }
 
 // TODO: define missing param and data types
@@ -111,7 +118,7 @@ export abstract class IAuthEngine {
 
   public abstract getPendingRequests(): Record<number, AuthEngineTypes.PendingRequest>;
 
-  public abstract getRequest(params: { id: number }): AuthEngineTypes.Cacao;
+  public abstract getResponse(params: { id: number }): AuthEngineTypes.Cacao;
 
   // ---------- Protected Helpers --------------------------------------- //
 
@@ -132,9 +139,9 @@ export abstract class IAuthEngine {
   protected abstract sendError(
     id: number,
     topic: string,
-    error: ErrorResponse,
+    error: AuthEngineTypes.ErrorResponse,
     opts?: CryptoTypes.EncodeOptions,
-  ): Promise<void>;
+  ): Promise<number>;
 
   protected abstract setExpiry(topic: string, expiry: number): Promise<void>;
 
