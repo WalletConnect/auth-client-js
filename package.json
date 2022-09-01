@@ -1,6 +1,7 @@
 {
   "name": "@walletconnect/auth-client",
   "description": "WalletConnect Auth Client",
+  "version": "0.0.1",
   "private": true,
   "keywords": [
     "wallet",
@@ -64,6 +65,5 @@
     "sinon": "14.0.0",
     "typescript": "4.7.4",
     "vitest": "0.19.0"
-  },
-  "version": "0.0.1"
+  }
 }
