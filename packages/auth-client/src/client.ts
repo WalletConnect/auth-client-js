@@ -31,14 +31,14 @@ export class AuthClient extends IAuthClient {
   public requests: IAuthClient["requests"];
   public address: IAuthClient["address"];
 
-  static async init(opts?: AuthClientTypes.Options) {
+  static async init(opts: AuthClientTypes.Options) {
     const client = new AuthClient(opts);
     await client.initialize();
 
     return client;
   }
 
-  constructor(opts?: AuthClientTypes.Options) {
+  constructor(opts: AuthClientTypes.Options) {
     super(opts);
 
     const logger =
@@ -50,8 +50,8 @@ export class AuthClient extends IAuthClient {
             }),
           );
 
-    this.metadata = opts?.metadata;
-    this.core = opts?.core || new Core(opts);
+    this.metadata = opts.metadata;
+    this.core = opts.core || new Core(opts);
     this.logger = generateChildLogger(logger, this.name);
     this.authKeys = new Store(this.core, this.logger, "authKeys", AUTH_CLIENT_STORAGE_PREFIX);
     this.pairingTopics = new Store(

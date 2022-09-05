@@ -10,7 +10,7 @@ export declare namespace JsonRpcTypes {
       payloadParams: AuthEngineTypes.PayloadParams;
       requester: {
         publicKey: string;
-        metadata?: AuthClientTypes.Metadata;
+        metadata: AuthClientTypes.Metadata;
       };
     };
   }
