@@ -28,7 +28,7 @@ export declare namespace AuthClientTypes {
   }
 
   interface Options extends CoreTypes.Options {
-    metadata?: Metadata;
+    metadata: Metadata;
     core?: ICore;
     iss?: string;
   }
