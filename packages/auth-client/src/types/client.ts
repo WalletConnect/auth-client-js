@@ -67,7 +67,7 @@ export abstract class IAuthClient {
   public abstract history: IJsonRpcHistory;
   public abstract address: string | undefined;
 
-  constructor(public opts?: Record<string, any>) {}
+  constructor(public opts: AuthClientTypes.Options) {}
 
   // ---------- Public Methods ----------------------------------------------- //
 
