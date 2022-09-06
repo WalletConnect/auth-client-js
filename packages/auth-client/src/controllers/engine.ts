@@ -137,7 +137,7 @@ export class AuthEngine extends IAuthEngine {
 
     const uri = formatUri({
       protocol: this.client.protocol,
-      version: this.client.version,
+      version: this.client.core.version,
       topic: pairingTopic,
       symKey,
       relay,
