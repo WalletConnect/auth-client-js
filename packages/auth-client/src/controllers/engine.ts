@@ -323,28 +323,28 @@ export class AuthEngine extends IAuthEngine {
 
   // ---------- Helpers ---------------------------------------------- //
   protected constructEip4361Message = (cacao: AuthEngineTypes.CacaoPayload) => {
-    const header = `${cacao.domain} wants you to sign in with your wallet:`;
+    const header = `${cacao.domain} wants you to sign in with your Ethereum account:`;
     const walletAddress = getDidAddress(cacao.iss);
     const statement = cacao.statement;
     const uri = `URI: ${cacao.aud}`;
     const version = `Version: ${cacao.version}`;
     const chainId = `Chain ID: ${getDidChainId(cacao.iss)}`;
     const nonce = `Nonce: ${cacao.nonce}`;
-    const issuedAt = `Issued at: ${cacao.iat}`;
-    const resources = `\n`;
+    const issuedAt = `Issued At: ${cacao.iat}`;
+    // const resources = `\n`;
 
     const message = [
       header,
       walletAddress,
-      "\n",
+      ``,
       statement,
-      "\n",
+      ``,
       uri,
       version,
       chainId,
       nonce,
       issuedAt,
-      resources,
+      // resources,
     ].join("\n");
 
     return message;
