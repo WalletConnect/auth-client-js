@@ -323,6 +323,8 @@ export class AuthEngine extends IAuthEngine {
 
   // ---------- Helpers ---------------------------------------------- //
   protected constructEip4361Message = (cacao: AuthEngineTypes.CacaoPayload) => {
+    console.log("constructEip4361Message, cacao is:", cacao);
+
     const header = `${cacao.domain} wants you to sign in with your Ethereum account:`;
     const walletAddress = getDidAddress(cacao.iss);
     const statement = cacao.statement;
@@ -357,6 +359,9 @@ export class AuthEngine extends IAuthEngine {
       requester,
       payloadParams: { statement, aud, domain, version, nonce, iat },
     } = payload.params;
+
+    console.log("onAuthRequest:", topic, payload);
+
     try {
       const cacaoPayload: AuthEngineTypes.CacaoPayload = {
         iss: this.client.address || "",
@@ -394,6 +399,8 @@ export class AuthEngine extends IAuthEngine {
   protected onAuthResponse: IAuthEngine["onAuthResponse"] = async (topic, response) => {
     const { id } = response;
 
+    console.log("onAuthResponse", topic, response);
+
     const { pairingTopic } = this.client.pairingTopics.get(topic);
 
     const newExpiry = calcExpiry(FOUR_WEEKS);
@@ -409,8 +416,15 @@ export class AuthEngine extends IAuthEngine {
       await this.client.requests.set(id, { id, ...response.result });
 
       const reconstructed = this.constructEip4361Message(payload);
+      console.log("reconstructed message:\n", JSON.stringify(reconstructed));
+      console.log("payload.iss:", payload.iss);
+      console.log("signature:", signature);
+
       const address = utils.verifyMessage(reconstructed, signature.s);
       const walletAddress = getDidAddress(payload.iss);
+
+      console.log("Recovered address from signature:", address);
+      console.log("walletAddress extracted from `payload.iss`:", walletAddress);
 
       if (address !== walletAddress) {
         this.client.emit("auth_response", {

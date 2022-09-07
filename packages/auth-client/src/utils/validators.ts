@@ -1,5 +1,5 @@
 import { IStore } from "@walletconnect/types";
-import { isValidChainId, isValidUrl } from "@walletconnect/utils";
+import { isValidUrl } from "@walletconnect/utils";
 import { AuthEngineTypes } from "../types";
 import { getPendingRequest } from "./store";
 
@@ -15,12 +15,13 @@ export function isValidPairUri(uri: string): boolean {
 
 export function isValidRequest(params: AuthEngineTypes.PayloadParams): boolean {
   const validAudience = isValidUrl(params.aud);
-  const validChainId = isValidChainId(params.chainId);
+  // FIXME: disabling this temporarily since it's failing expected values like `chainId: "1"`
+  // const validChainId = isValidChainId(params.chainId);
   const domainInAud = new RegExp(`${params.domain}`).test(params.aud);
   const hasNonce = !!params.nonce;
   const includedType = params.type === "eip4361";
 
-  return !!(validAudience && validChainId && domainInAud && hasNonce && includedType);
+  return !!(validAudience /*&& validChainId*/ && domainInAud && hasNonce && includedType);
 }
 
 export function isValidRespond(
