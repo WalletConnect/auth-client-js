@@ -333,9 +333,10 @@ export class AuthEngine extends IAuthEngine {
     const chainId = `Chain ID: ${getDidChainId(cacao.iss)}`;
     const nonce = `Nonce: ${cacao.nonce}`;
     const issuedAt = `Issued At: ${cacao.iat}`;
-    const resources = cacao.resources
-      ? `Resources:\n${cacao.resources.map((resource) => `- ${resource}`).join("\n")}`
-      : undefined;
+    const resources =
+      cacao.resources && cacao.resources.length > 0
+        ? `Resources:\n${cacao.resources.map((resource) => `- ${resource}`).join("\n")}`
+        : undefined;
 
     const message = [
       header,
@@ -350,7 +351,7 @@ export class AuthEngine extends IAuthEngine {
       issuedAt,
       resources,
     ]
-      .filter((val) => val !== undefined || val !== null) // remove unnecessary empty lines
+      .filter((val) => val !== undefined && val !== null) // remove unnecessary empty lines
       .join("\n");
 
     return message;
