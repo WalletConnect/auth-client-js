@@ -350,7 +350,7 @@ export class AuthEngine extends IAuthEngine {
       issuedAt,
       resources,
     ]
-      .filter((val) => val !== undefined) // remove unnecessary empty lines
+      .filter((val) => val !== undefined || val !== null) // remove unnecessary empty lines
       .join("\n");
 
     return message;
