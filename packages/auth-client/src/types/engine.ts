@@ -75,9 +75,9 @@ export declare namespace AuthEngineTypes {
   }
 
   interface Cacao {
-    header: CacaoHeader;
-    payload: CacaoPayload;
-    signature: CacaoSignature;
+    h: CacaoHeader;
+    p: CacaoPayload;
+    s: CacaoSignature;
   }
 
   interface PendingRequest {
