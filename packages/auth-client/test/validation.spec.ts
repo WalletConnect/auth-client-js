@@ -1,8 +1,13 @@
-import { Store } from "@walletconnect/core";
 import { describe, expect, it } from "vitest";
 import { AuthClient } from "../src/client";
-import { getPendingRequest } from "../src/utils/store";
 import { isValidPairUri, isValidRequest, isValidRespond } from "../src/utils/validators";
+
+const metadataRequester = {
+  name: "client (requester)",
+  description: "Test Client as Requester",
+  url: "www.walletconnect.com",
+  icons: [],
+};
 
 describe("Validation", () => {
   describe("Request Validation", () => {
@@ -59,11 +64,12 @@ describe("Validation", () => {
       const id = 1;
       const client = await AuthClient.init({
         logger: "error",
-        relayUrl: "ws://0.0.0.0:5555",
-        projectId: undefined,
+        relayUrl: process.env.TEST_RELAY_URL || "wss://staging.relay.walletconnect.com",
+        projectId: process.env.TEST_PROJECT_ID,
         storageOptions: {
           database: ":memory:",
         },
+        metadata: metadataRequester,
       });
 
       await client.requests.set(1, {
@@ -80,11 +86,12 @@ describe("Validation", () => {
     it("Validates bad case", async () => {
       const client = await AuthClient.init({
         logger: "error",
-        relayUrl: "ws://0.0.0.0:5555",
-        projectId: undefined,
+        relayUrl: process.env.TEST_RELAY_URL || "wss://staging.relay.walletconnect.com",
+        projectId: process.env.TEST_PROJECT_ID,
         storageOptions: {
           database: ":memory:",
         },
+        metadata: metadataRequester,
       });
 
       const isValid = isValidRespond({ id: 2, signature: {} as any }, client.requests);
