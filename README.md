@@ -15,8 +15,8 @@
 
 ## Unit Tests
 
-- The unit tests depend on a relay server being run locally on port `5555`.
-- Before running tests, pull and start ts-relay server ([separate repo](https://github.com/WalletConnect/ts-relay)) `PORT=5555 npm run start` in a separate terminal window
+- The `vitest` test environment automatically pulls in the environment variables defined in `testEnv.json`
+- These can be manually overridden by prefixing the desired custom vars: `TEST_PROJECT_ID=... yarn test`
 
 ## License
 
