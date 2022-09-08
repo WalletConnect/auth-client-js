@@ -3,11 +3,18 @@ import ethers from "ethers";
 import { AuthClient } from "../src/client";
 import { AuthEngineTypes } from "../src/types";
 import { hashKey } from "@walletconnect/utils";
-const metadata = {
-  name: "Foo",
-  description: "description",
+const metadataRequester = {
+  name: "client (requester)",
+  description: "Test Client as Requester",
+  url: "www.walletconnect.com",
   icons: [],
-  url: "url",
+};
+
+const metadataResponder = {
+  name: "peer (responder)",
+  description: "Test Client as Peer/Responder",
+  url: "www.walletconnect.com",
+  icons: [],
 };
 
 const defaultRequestParams: AuthEngineTypes.PayloadParams = {
@@ -67,7 +74,7 @@ describe("AuthClient", () => {
       storageOptions: {
         database: ":memory:",
       },
-      metadata,
+      metadata: metadataRequester,
     });
 
     peer = await AuthClient.init({
@@ -78,7 +85,7 @@ describe("AuthClient", () => {
         database: ":memory:",
       },
       iss: `did:pkh:eip155:1:${wallet.address}`,
-      metadata,
+      metadata: metadataResponder,
     });
   });
 
@@ -295,7 +302,7 @@ describe("AuthClient", () => {
       storageOptions: {
         database: ":memory:",
       },
-      metadata,
+      metadata: metadataRequester,
     });
 
     let hasResponded = false;
@@ -324,7 +331,7 @@ describe("AuthClient", () => {
     expect(client.pairing.values[0].active).to.eql(true);
 
     expect(hasResponded).to.eql(true);
-    expect(receivedMetadataName).to.eql(metadata.name);
+    expect(receivedMetadataName).to.eql(metadataRequester.name);
   });
 
   it("expires pairings", async () => {
