@@ -170,11 +170,11 @@ export class AuthEngine extends IAuthEngine {
     }
 
     const cacao: AuthEngineTypes.Cacao = {
-      header: {
+      h: {
         t: "eip4361",
       },
-      payload: pendingRequest.cacaoPayload,
-      signature: respondParams.signature,
+      p: pendingRequest.cacaoPayload,
+      s: respondParams.signature,
     };
 
     const id = await this.sendResult<"wc_authRequest">(
@@ -333,7 +333,9 @@ export class AuthEngine extends IAuthEngine {
     const chainId = `Chain ID: ${getDidChainId(cacao.iss)}`;
     const nonce = `Nonce: ${cacao.nonce}`;
     const issuedAt = `Issued At: ${cacao.iat}`;
-    // const resources = `\n`;
+    const resources = cacao.resources
+      ? `Resources:\n${cacao.resources.map((resource) => `- ${resource}`).join("\n")}`
+      : undefined;
 
     const message = [
       header,
@@ -346,8 +348,10 @@ export class AuthEngine extends IAuthEngine {
       chainId,
       nonce,
       issuedAt,
-      // resources,
-    ].join("\n");
+      resources,
+    ]
+      .filter((val) => val !== undefined) // remove unnecessary empty lines
+      .join("\n");
 
     return message;
   };
@@ -411,7 +415,7 @@ export class AuthEngine extends IAuthEngine {
     this.setExpiry(pairingTopic, newExpiry);
 
     if (isJsonRpcResult(response)) {
-      const { signature, payload } = response.result;
+      const { s: signature, p: payload } = response.result;
 
       await this.client.requests.set(id, { id, ...response.result });
 

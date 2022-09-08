@@ -3,6 +3,12 @@ import ethers from "ethers";
 import { AuthClient } from "../src/client";
 import { AuthEngineTypes } from "../src/types";
 import { hashKey } from "@walletconnect/utils";
+const metadata = {
+  name: "Foo",
+  description: "description",
+  icons: [],
+  url: "url",
+};
 
 const defaultRequestParams: AuthEngineTypes.PayloadParams = {
   aud: "http://localhost:3000/login",
@@ -61,6 +67,7 @@ describe("AuthClient", () => {
       storageOptions: {
         database: ":memory:",
       },
+      metadata,
     });
 
     peer = await AuthClient.init({
@@ -71,6 +78,7 @@ describe("AuthClient", () => {
         database: ":memory:",
       },
       iss: `did:pkh:eip155:1:${wallet.address}`,
+      metadata,
     });
   });
 
@@ -203,7 +211,7 @@ describe("AuthClient", () => {
     });
 
     client.once("auth_response", (args) => {
-      successfulResponse = Boolean(args.params.result?.signature);
+      successfulResponse = Boolean(args.params.result?.s);
       hasResponded = true;
     });
 
@@ -228,7 +236,7 @@ describe("AuthClient", () => {
     const id = 42;
     client.requests.set(id, {
       id,
-      payload: {
+      p: {
         aud,
       },
     } as any);
@@ -252,8 +260,9 @@ describe("AuthClient", () => {
     await waitForEvent(() => peerHasResponded);
 
     const request = client.getResponse({ id });
+    console.log({ request });
 
-    expect(request.payload.aud).to.eql(aud);
+    expect(request.p.aud).to.eql(aud);
   });
 
   it("correctly retrieves pending requests", async () => {
@@ -278,21 +287,15 @@ describe("AuthClient", () => {
   });
 
   it("receives metadata", async () => {
-    const metadataName = "Foo";
     let receivedMetadataName: string;
     client = await AuthClient.init({
       logger: "error",
       relayUrl: "ws://0.0.0.0:5555",
       projectId: undefined,
-      metadata: {
-        name: metadataName,
-        description: "description",
-        icons: [],
-        url: "url",
-      },
       storageOptions: {
         database: ":memory:",
       },
+      metadata,
     });
 
     let hasResponded = false;
@@ -321,7 +324,7 @@ describe("AuthClient", () => {
     expect(client.pairing.values[0].active).to.eql(true);
 
     expect(hasResponded).to.eql(true);
-    expect(receivedMetadataName).to.eql(metadataName);
+    expect(receivedMetadataName).to.eql(metadata.name);
   });
 
   it("expires pairings", async () => {
