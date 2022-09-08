@@ -64,8 +64,8 @@ describe("Validation", () => {
       const id = 1;
       const client = await AuthClient.init({
         logger: "error",
-        relayUrl: "ws://0.0.0.0:5555",
-        projectId: undefined,
+        relayUrl: process.env.TEST_RELAY_URL || "wss://staging.relay.walletconnect.com",
+        projectId: process.env.TEST_PROJECT_ID,
         storageOptions: {
           database: ":memory:",
         },
@@ -86,11 +86,12 @@ describe("Validation", () => {
     it("Validates bad case", async () => {
       const client = await AuthClient.init({
         logger: "error",
-        relayUrl: "ws://0.0.0.0:5555",
-        projectId: undefined,
+        relayUrl: process.env.TEST_RELAY_URL || "wss://staging.relay.walletconnect.com",
+        projectId: process.env.TEST_PROJECT_ID,
         storageOptions: {
           database: ":memory:",
         },
+        metadata: metadataRequester,
       });
 
       const isValid = isValidRespond({ id: 2, signature: {} as any }, client.requests);

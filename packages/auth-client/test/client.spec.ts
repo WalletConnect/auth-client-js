@@ -2,7 +2,7 @@ import { expect, describe, it, beforeEach, beforeAll, vi, afterEach } from "vite
 import ethers from "ethers";
 import { AuthClient } from "../src/client";
 import { AuthEngineTypes } from "../src/types";
-import { hashKey } from "@walletconnect/utils";
+
 const metadataRequester = {
   name: "client (requester)",
   description: "Test Client as Requester",
@@ -69,8 +69,8 @@ describe("AuthClient", () => {
   beforeEach(async () => {
     client = await AuthClient.init({
       logger: "error",
-      relayUrl: "ws://0.0.0.0:5555",
-      projectId: undefined,
+      relayUrl: process.env.TEST_RELAY_URL || "wss://staging.relay.walletconnect.com",
+      projectId: process.env.TEST_PROJECT_ID,
       storageOptions: {
         database: ":memory:",
       },
@@ -79,8 +79,8 @@ describe("AuthClient", () => {
 
     peer = await AuthClient.init({
       logger: "error",
-      relayUrl: "ws://0.0.0.0:5555",
-      projectId: undefined,
+      relayUrl: process.env.TEST_RELAY_URL || "wss://staging.relay.walletconnect.com",
+      projectId: process.env.TEST_PROJECT_ID,
       storageOptions: {
         database: ":memory:",
       },
@@ -297,8 +297,8 @@ describe("AuthClient", () => {
     let receivedMetadataName: string;
     client = await AuthClient.init({
       logger: "error",
-      relayUrl: "ws://0.0.0.0:5555",
-      projectId: undefined,
+      relayUrl: process.env.TEST_RELAY_URL || "wss://staging.relay.walletconnect.com",
+      projectId: process.env.TEST_PROJECT_ID,
       storageOptions: {
         database: ":memory:",
       },
