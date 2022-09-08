@@ -361,7 +361,7 @@ export class AuthEngine extends IAuthEngine {
   protected onAuthRequest: IAuthEngine["onAuthRequest"] = async (topic, payload) => {
     const {
       requester,
-      payloadParams: { statement, aud, domain, version, nonce, iat },
+      payloadParams: { resources, statement, aud, domain, version, nonce, iat },
     } = payload.params;
 
     console.log("onAuthRequest:", topic, payload);
@@ -375,6 +375,7 @@ export class AuthEngine extends IAuthEngine {
         nonce,
         iat,
         statement,
+        resources,
       };
 
       const message = this.constructEip4361Message(cacaoPayload);
