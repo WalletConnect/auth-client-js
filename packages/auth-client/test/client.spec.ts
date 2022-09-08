@@ -1,4 +1,4 @@
-import { expect, describe, it, beforeEach, beforeAll, vi, afterEach } from "vitest";
+import { expect, describe, it, beforeEach, beforeAll, vi } from "vitest";
 import ethers from "ethers";
 import { AuthClient } from "../src/client";
 import { AuthEngineTypes } from "../src/types";
@@ -119,13 +119,9 @@ describe("AuthClient", () => {
   });
 
   it("Uses existing pairings", async () => {
-    let hasPaired = false;
-
     let uri2 = "";
 
     peer.on("auth_request", async (args) => {
-      hasPaired = true;
-
       const signature = await wallet.signMessage(args.params.message);
       await peer.respond({
         id: args.id,
