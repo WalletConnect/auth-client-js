@@ -42,11 +42,11 @@ export class AuthClient extends IAuthClient {
     super(opts);
 
     const logger =
-      typeof opts?.logger !== "undefined" && typeof opts?.logger !== "string"
+      typeof opts.logger !== "undefined" && typeof opts.logger !== "string"
         ? opts.logger
         : pino(
             getDefaultLoggerOptions({
-              level: opts?.logger || "error",
+              level: opts.logger || "error",
             }),
           );
 
@@ -65,7 +65,7 @@ export class AuthClient extends IAuthClient {
     this.expirer = new Expirer(this.core, this.logger);
     this.engine = new AuthEngine(this);
     this.history = new JsonRpcHistory(this.core, this.logger);
-    this.address = opts?.iss;
+    this.address = opts.iss;
   }
 
   get context() {
