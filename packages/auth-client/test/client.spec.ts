@@ -121,7 +121,7 @@ describe("AuthClient", () => {
   it("Uses existing pairings", async () => {
     let hasPaired = false;
 
-    let uri2: string;
+    let uri2 = "";
 
     peer.on("auth_request", async (args) => {
       hasPaired = true;
@@ -294,7 +294,7 @@ describe("AuthClient", () => {
   });
 
   it("receives metadata", async () => {
-    let receivedMetadataName: string;
+    let receivedMetadataName = "";
     client = await AuthClient.init({
       logger: "error",
       relayUrl: process.env.TEST_RELAY_URL || "wss://staging.relay.walletconnect.com",
