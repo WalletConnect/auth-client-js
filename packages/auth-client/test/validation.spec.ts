@@ -1,8 +1,13 @@
-import { Store } from "@walletconnect/core";
 import { describe, expect, it } from "vitest";
 import { AuthClient } from "../src/client";
-import { getPendingRequest } from "../src/utils/store";
 import { isValidPairUri, isValidRequest, isValidRespond } from "../src/utils/validators";
+
+const metadataRequester = {
+  name: "client (requester)",
+  description: "Test Client as Requester",
+  url: "www.walletconnect.com",
+  icons: [],
+};
 
 describe("Validation", () => {
   describe("Request Validation", () => {
@@ -64,6 +69,7 @@ describe("Validation", () => {
         storageOptions: {
           database: ":memory:",
         },
+        metadata: metadataRequester,
       });
 
       await client.requests.set(1, {
