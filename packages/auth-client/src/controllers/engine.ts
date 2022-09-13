@@ -192,6 +192,10 @@ export class AuthEngine extends IAuthEngine {
     return pendingRequests;
   };
 
+  public getPairings: IAuthEngine["getPairings"] = () => {
+    return this.client.pairing.values;
+  };
+
   // ---------- Private Helpers --------------------------------------- //
 
   private deletePairing = async (topic: string) => {

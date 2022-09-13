@@ -75,6 +75,7 @@ export abstract class IAuthClient {
   public abstract request: IAuthEngine["request"];
   public abstract respond: IAuthEngine["respond"];
   public abstract getPendingRequests: IAuthEngine["getPendingRequests"];
+  public abstract getPairings: IAuthEngine["getPairings"];
 
   // ---------- Event Handlers ----------------------------------------------- //
 

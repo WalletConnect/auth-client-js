@@ -1,4 +1,4 @@
-import { RelayerTypes, CryptoTypes } from "@walletconnect/types";
+import { RelayerTypes, CryptoTypes, PairingTypes } from "@walletconnect/types";
 
 import {
   ErrorResponse as CommonErrorResponse,
@@ -117,6 +117,8 @@ export abstract class IAuthEngine {
   public abstract respond(params: AuthEngineTypes.RespondParams): Promise<void>;
 
   public abstract getPendingRequests(): Record<number, AuthEngineTypes.PendingRequest>;
+
+  public abstract getPairings(): PairingTypes.Struct[];
 
   // ---------- Protected Helpers --------------------------------------- //
 

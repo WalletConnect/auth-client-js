@@ -234,25 +234,51 @@ describe("AuthClient", () => {
     expect(successfulResponse).to.eql(true);
   });
 
-  it("correctly retrieves pending requests", async () => {
-    let receivedAuthRequest = false;
-    const aud = "http://localhost:3000/login";
+  describe("getPendingRequests", () => {
+    it("correctly retrieves pending requests", async () => {
+      let receivedAuthRequest = false;
+      const aud = "http://localhost:3000/login";
 
-    peer.once("auth_request", () => {
-      receivedAuthRequest = true;
+      peer.once("auth_request", () => {
+        receivedAuthRequest = true;
+      });
+
+      const { uri } = await client.request(defaultRequestParams);
+
+      await peer.pair({ uri });
+
+      await waitForEvent(() => receivedAuthRequest);
+
+      const requests = peer.getPendingRequests();
+
+      expect(Object.values(requests).length).to.eql(1);
+
+      expect(Object.values(requests)[0].cacaoPayload.aud).to.eql(aud);
     });
+  });
 
-    const { uri } = await client.request(defaultRequestParams);
+  describe.only("getPairings", () => {
+    it("correctly retrieves pairings", async () => {
+      let receivedAuthRequest = false;
+      const aud = "http://localhost:3000/login";
 
-    await peer.pair({ uri });
+      peer.once("auth_request", () => {
+        receivedAuthRequest = true;
+      });
 
-    await waitForEvent(() => receivedAuthRequest);
+      const { uri } = await client.request(defaultRequestParams);
 
-    const requests = peer.getPendingRequests();
+      await peer.pair({ uri });
 
-    expect(Object.values(requests).length).to.eql(1);
+      await waitForEvent(() => receivedAuthRequest);
 
-    expect(Object.values(requests)[0].cacaoPayload.aud).to.eql(aud);
+      const clientPairings = client.getPairings();
+      const peerPairings = peer.getPairings();
+
+      expect(clientPairings.length).to.eql(1);
+      expect(peerPairings.length).to.eql(1);
+      expect(clientPairings[0].topic).to.eql(peerPairings[0].topic);
+    });
   });
 
   it("receives metadata", async () => {
