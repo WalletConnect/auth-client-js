@@ -19,12 +19,13 @@ import {
   parseExpirerTarget,
   isExpired,
   getSdkError,
+  isValidString,
 } from "@walletconnect/utils";
 import { utils } from "ethers";
 import { JsonRpcTypes, IAuthEngine, AuthEngineTypes } from "../types";
 import { EXPIRER_EVENTS, AUTH_CLIENT_PUBLIC_KEY_NAME, ENGINE_RPC_OPTS } from "../constants";
 import { getDidAddress, getDidChainId } from "../utils/address";
-import { getCompleteResponse, getPendingRequest, getPendingRequests } from "../utils/store";
+import { getPendingRequest, getPendingRequests } from "../utils/store";
 import { isValidPairUri, isValidRequest, isValidRespond } from "../utils/validators";
 import { formatUri, parseUri } from "../utils/uri";
 
@@ -192,10 +193,18 @@ export class AuthEngine extends IAuthEngine {
     return pendingRequests;
   };
 
-  public getResponse: IAuthEngine["getResponse"] = ({ id }) => {
-    const request = getCompleteResponse(this.client.requests, id);
+  public getPairings: IAuthEngine["getPairings"] = () => {
+    return this.client.pairing.values;
+  };
 
-    return request;
+  public disconnect: IAuthEngine["disconnect"] = async (params) => {
+    this.isInitialized();
+    const { topic } = params;
+    await this.isValidPairingTopic(topic);
+    if (this.client.pairing.keys.includes(topic)) {
+      await this.sendRequest(topic, "wc_pairingDelete", getSdkError("USER_DISCONNECTED"));
+      await this.deletePairing(topic);
+    }
   };
 
   // ---------- Private Helpers --------------------------------------- //
@@ -302,6 +311,8 @@ export class AuthEngine extends IAuthEngine {
     switch (reqMethod) {
       case "wc_authRequest":
         return this.onAuthRequest(topic, payload);
+      case "wc_pairingDelete":
+        return this.onPairingDeleteRequest(topic, payload);
       default:
         return this.client.logger.info(`Unsupported request method ${reqMethod}`);
     }
@@ -446,6 +457,23 @@ export class AuthEngine extends IAuthEngine {
     }
   };
 
+  protected onPairingDeleteRequest: IAuthEngine["onPairingDeleteRequest"] = async (
+    topic,
+    payload,
+  ) => {
+    const { id } = payload;
+    try {
+      await this.isValidPairingTopic(topic);
+      // RPC request needs to happen before deletion as it utilises pairing encryption
+      await this.sendResult<"wc_pairingDelete">(id, topic, true);
+      await this.deletePairing(topic);
+      this.client.events.emit("pairing_delete", { id, topic });
+    } catch (err: any) {
+      await this.sendError(id, topic, err);
+      this.client.logger.error(err);
+    }
+  };
+
   // ---------- Expirer Events ---------------------------------------- //
 
   private registerExpirerEvents() {
@@ -458,5 +486,29 @@ export class AuthEngine extends IAuthEngine {
         }
       }
     });
+  }
+
+  // ---------- Validation Helpers ------------------------------------ //
+
+  private async isValidPairingTopic(topic: unknown) {
+    if (!isValidString(topic, false)) {
+      const { message } = getInternalError(
+        "MISSING_OR_INVALID",
+        `pairing topic should be a string: ${topic}`,
+      );
+      throw new Error(message);
+    }
+    if (!this.client.pairing.keys.includes(topic)) {
+      const { message } = getInternalError(
+        "NO_MATCHING_KEY",
+        `pairing topic doesn't exist: ${topic}`,
+      );
+      throw new Error(message);
+    }
+    if (isExpired(this.client.pairing.get(topic).expiry)) {
+      await this.deletePairing(topic);
+      const { message } = getInternalError("EXPIRED", `pairing topic: ${topic}`);
+      throw new Error(message);
+    }
   }
 }

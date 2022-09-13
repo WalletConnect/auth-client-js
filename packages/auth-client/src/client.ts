@@ -135,9 +135,18 @@ export class AuthClient extends IAuthClient {
     }
   };
 
-  public getResponse: IAuthClient["getResponse"] = (params) => {
+  public getPairings: IAuthClient["getPairings"] = () => {
     try {
-      return this.engine.getResponse(params);
+      return this.engine.getPairings();
+    } catch (error: any) {
+      this.logger.error(error.message);
+      throw error;
+    }
+  };
+
+  public disconnect: IAuthClient["disconnect"] = async (params) => {
+    try {
+      return await this.engine.disconnect(params);
     } catch (error: any) {
       this.logger.error(error.message);
       throw error;

@@ -1,4 +1,4 @@
-import { RelayerTypes, CryptoTypes } from "@walletconnect/types";
+import { RelayerTypes, CryptoTypes, PairingTypes } from "@walletconnect/types";
 
 import {
   ErrorResponse as CommonErrorResponse,
@@ -118,7 +118,9 @@ export abstract class IAuthEngine {
 
   public abstract getPendingRequests(): Record<number, AuthEngineTypes.PendingRequest>;
 
-  public abstract getResponse(params: { id: number }): AuthEngineTypes.Cacao;
+  public abstract getPairings(): PairingTypes.Struct[];
+
+  public abstract disconnect(params: { topic: string }): Promise<void>;
 
   // ---------- Protected Helpers --------------------------------------- //
 
@@ -168,4 +170,9 @@ export abstract class IAuthEngine {
     topic: string,
     payload: JsonRpcResult<JsonRpcTypes.Results["wc_authRequest"]> | JsonRpcError,
   ): void;
+
+  protected abstract onPairingDeleteRequest(
+    topic: string,
+    payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_pairingDelete"]>,
+  ): Promise<void>;
 }
