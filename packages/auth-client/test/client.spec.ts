@@ -280,7 +280,7 @@ describe("AuthClient", () => {
     });
   });
 
-  describe.only("disconnect", () => {
+  describe("disconnect", () => {
     it("removes the disconnected pairing", async () => {
       let receivedAuthRequest = false;
       let peerDeletedPairing = false;
