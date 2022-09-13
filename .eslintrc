@@ -28,7 +28,7 @@
     "space-before-function-paren": ["off"],
     "indent": ["off"],
     "promise/param-names": "off",
-    "no-console": ["error", { "allow": ["warn"] }],
+    "no-console": ["warn"],
     "no-useless-constructor": "off",
     "no-use-before-define": "off",
     "curly": "off",
