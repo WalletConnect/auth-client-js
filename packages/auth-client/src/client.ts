@@ -144,6 +144,15 @@ export class AuthClient extends IAuthClient {
     }
   };
 
+  public disconnect: IAuthClient["disconnect"] = async (params) => {
+    try {
+      return await this.engine.disconnect(params);
+    } catch (error: any) {
+      this.logger.error(error.message);
+      throw error;
+    }
+  };
+
   // ---------- Private ----------------------------------------------- //
 
   private async initialize() {

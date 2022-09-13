@@ -120,6 +120,8 @@ export abstract class IAuthEngine {
 
   public abstract getPairings(): PairingTypes.Struct[];
 
+  public abstract disconnect(params: { topic: string }): Promise<void>;
+
   // ---------- Protected Helpers --------------------------------------- //
 
   protected abstract sendRequest<M extends JsonRpcTypes.WcMethod>(
@@ -168,4 +170,9 @@ export abstract class IAuthEngine {
     topic: string,
     payload: JsonRpcResult<JsonRpcTypes.Results["wc_authRequest"]> | JsonRpcError,
   ): void;
+
+  protected abstract onPairingDeleteRequest(
+    topic: string,
+    payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_pairingDelete"]>,
+  ): Promise<void>;
 }

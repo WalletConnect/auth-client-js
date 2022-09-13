@@ -257,10 +257,9 @@ describe("AuthClient", () => {
     });
   });
 
-  describe.only("getPairings", () => {
+  describe("getPairings", () => {
     it("correctly retrieves pairings", async () => {
       let receivedAuthRequest = false;
-      const aud = "http://localhost:3000/login";
 
       peer.once("auth_request", () => {
         receivedAuthRequest = true;
@@ -278,6 +277,37 @@ describe("AuthClient", () => {
       expect(clientPairings.length).to.eql(1);
       expect(peerPairings.length).to.eql(1);
       expect(clientPairings[0].topic).to.eql(peerPairings[0].topic);
+    });
+  });
+
+  describe.only("disconnect", () => {
+    it("removes the disconnected pairing", async () => {
+      let receivedAuthRequest = false;
+      let peerDeletedPairing = false;
+
+      peer.once("auth_request", () => {
+        receivedAuthRequest = true;
+      });
+      peer.once("pairing_delete", () => {
+        peerDeletedPairing = true;
+      });
+
+      const { uri } = await client.request(defaultRequestParams);
+
+      await peer.pair({ uri });
+
+      await waitForEvent(() => receivedAuthRequest);
+
+      expect(client.pairing.keys.length).to.eql(1);
+      expect(peer.pairing.keys.length).to.eql(1);
+      expect(client.pairing.values[0].topic).to.eql(peer.pairing.values[0].topic);
+
+      await client.disconnect({ topic: client.pairing.values[0].topic });
+
+      await waitForEvent(() => peerDeletedPairing);
+
+      expect(client.pairing.keys.length).to.eql(0);
+      expect(peer.pairing.keys.length).to.eql(0);
     });
   });
 
