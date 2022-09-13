@@ -463,8 +463,7 @@ export class AuthEngine extends IAuthEngine {
   ) => {
     const { id } = payload;
     try {
-      // TODO: implement check
-      // this.isValidDisconnect({ topic, reason: payload.params });
+      await this.isValidPairingTopic(topic);
       // RPC request needs to happen before deletion as it utilises pairing encryption
       await this.sendResult<"wc_pairingDelete">(id, topic, true);
       await this.deletePairing(topic);
