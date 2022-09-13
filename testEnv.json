@@ -1,4 +1,4 @@
 {
-  "TEST_RELAY_URL": "wss://staging.relay.walletconnect.com",
+  "TEST_RELAY_URL": "wss://relay.walletconnect.com",
   "TEST_PROJECT_ID": "50d625ae272678377b2d3e21b293c2b8"
 }
