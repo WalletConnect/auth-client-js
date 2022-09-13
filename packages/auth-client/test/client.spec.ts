@@ -352,7 +352,8 @@ describe("AuthClient", () => {
     expect(receivedMetadataName).to.eql(metadataRequester.name);
   });
 
-  it("expires pairings", async () => {
+  // FIXME: this test flakes pass/fail. Figure out a reliable approach and reactivate.
+  it.skip("expires pairings", async () => {
     let peerHasResponded = false;
     peer.once("auth_request", async (args) => {
       const signature = await wallet.signMessage(args.params.message);
