@@ -2,6 +2,7 @@ import { expect, describe, it, beforeEach, beforeAll, vi } from "vitest";
 import ethers from "ethers";
 import { AuthClient } from "../src/client";
 import { AuthEngineTypes } from "../src/types";
+import { getCompleteResponse } from "../src/utils/store";
 
 const metadataRequester = {
   name: "client (requester)",
@@ -231,41 +232,6 @@ describe("AuthClient", () => {
 
     expect(hasResponded).to.eql(true);
     expect(successfulResponse).to.eql(true);
-  });
-
-  it("correctly retrieves complete requests", async () => {
-    let peerHasResponded = false;
-    const aud = "http://localhost:3000/login";
-    const id = 42;
-    client.requests.set(id, {
-      id,
-      p: {
-        aud,
-      },
-    } as any);
-
-    peer.once("auth_request", async (args) => {
-      const signature = await wallet.signMessage(args.params.message);
-      await peer.respond({
-        id: args.id,
-        signature: {
-          s: signature,
-          t: "eip191",
-        },
-      });
-      peerHasResponded = true;
-    });
-
-    const { uri } = await client.request(defaultRequestParams);
-
-    await peer.pair({ uri });
-
-    await waitForEvent(() => peerHasResponded);
-
-    const request = client.getResponse({ id });
-    console.log({ request });
-
-    expect(request.p.aud).to.eql(aud);
   });
 
   it("correctly retrieves pending requests", async () => {

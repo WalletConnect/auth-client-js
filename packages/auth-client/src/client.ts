@@ -135,15 +135,6 @@ export class AuthClient extends IAuthClient {
     }
   };
 
-  public getResponse: IAuthClient["getResponse"] = (params) => {
-    try {
-      return this.engine.getResponse(params);
-    } catch (error: any) {
-      this.logger.error(error.message);
-      throw error;
-    }
-  };
-
   // ---------- Private ----------------------------------------------- //
 
   private async initialize() {

@@ -24,7 +24,7 @@ import { utils } from "ethers";
 import { JsonRpcTypes, IAuthEngine, AuthEngineTypes } from "../types";
 import { EXPIRER_EVENTS, AUTH_CLIENT_PUBLIC_KEY_NAME, ENGINE_RPC_OPTS } from "../constants";
 import { getDidAddress, getDidChainId } from "../utils/address";
-import { getCompleteResponse, getPendingRequest, getPendingRequests } from "../utils/store";
+import { getPendingRequest, getPendingRequests } from "../utils/store";
 import { isValidPairUri, isValidRequest, isValidRespond } from "../utils/validators";
 import { formatUri, parseUri } from "../utils/uri";
 
@@ -190,12 +190,6 @@ export class AuthEngine extends IAuthEngine {
   public getPendingRequests: IAuthEngine["getPendingRequests"] = () => {
     const pendingRequests = getPendingRequests(this.client.requests);
     return pendingRequests;
-  };
-
-  public getResponse: IAuthEngine["getResponse"] = ({ id }) => {
-    const request = getCompleteResponse(this.client.requests, id);
-
-    return request;
   };
 
   // ---------- Private Helpers --------------------------------------- //
