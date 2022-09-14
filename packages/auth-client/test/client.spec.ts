@@ -17,15 +17,11 @@ const metadataResponder = {
   icons: [],
 };
 
-const defaultRequestParams: AuthEngineTypes.PayloadParams = {
+const defaultRequestParams: AuthEngineTypes.RequestParams = {
   aud: "http://localhost:3000/login",
   domain: "localhost:3000",
   chainId: "eip155:1",
-  exp: new Date(new Date().getTime() + 50000).toISOString(),
-  type: "eip4361",
   nonce: "nonce",
-  iat: new Date().toISOString(),
-  version: "1",
 };
 
 const waitForRelay = async (waitTimeOverride?: number) => {

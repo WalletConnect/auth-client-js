@@ -19,9 +19,9 @@ export function isValidRequest(params: AuthEngineTypes.PayloadParams): boolean {
   // const validChainId = isValidChainId(params.chainId);
   const domainInAud = new RegExp(`${params.domain}`).test(params.aud);
   const hasNonce = !!params.nonce;
-  const includedType = params.type === "eip4361";
+  const hasValidType = params.type ? params.type === "eip4361" : true;
 
-  return !!(validAudience /*&& validChainId*/ && domainInAud && hasNonce && includedType);
+  return !!(validAudience /*&& validChainId*/ && domainInAud && hasNonce && hasValidType);
 }
 
 export function isValidRespond(
