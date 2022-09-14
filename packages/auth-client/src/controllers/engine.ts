@@ -77,35 +77,54 @@ export class AuthEngine extends IAuthEngine {
       throw new Error("Invalid request");
     }
 
+    // SPEC: A will construct an authentication request.
+    const { chainId, statement, aud, domain, nonce, type } = params;
+
     const existingPairings = this.client.pairing.getAll({ active: true });
     const relay = { protocol: RELAYER_DEFAULT_PROTOCOL };
 
-    // SPEC: A creates random symKey S for pairing topic
-
-    let pairingTopic: string;
-    let symKey = "";
-
-    if (existingPairings.length > 0) {
-      const pairing = existingPairings[0];
-      pairingTopic = pairing.topic;
-      symKey = this.client.core.crypto.keychain.get(pairingTopic);
-    } else {
-      // SPEC: A generates keyPair X and generates response topic
-      symKey = generateRandomBytes32();
-
-      // SPEC: Pairing topic is the hash of symkey S
-      pairingTopic = await this.client.core.crypto.setSymKey(symKey);
-
-      const expiry = calcExpiry(FIVE_MINUTES);
-
-      // Preparing pairing URI
-      const pairing = { topic: pairingTopic, expiry, relay, active: false };
-      await this.client.pairing.set(pairingTopic, pairing);
-
-      this.setExpiry(pairingTopic, expiry);
-    }
+    const expiry = calcExpiry(FIVE_MINUTES);
 
     const publicKey = await this.client.core.crypto.generateKeyPair();
+
+    // SPEC: A creates random symKey S for pairing topic
+    if (existingPairings.filter((pairing) => pairing.active).length > 0) {
+      console.log("Found existing active pairing");
+
+      const pairing = existingPairings[existingPairings.length - 1];
+      const existingPairingTopic = pairing.topic;
+
+      // Send request to existing pairing
+      await this.sendRequest(existingPairingTopic, "wc_authRequest", {
+        payloadParams: {
+          type: type ?? "eip4361",
+          chainId,
+          statement,
+          aud,
+          domain,
+          version: "1",
+          nonce,
+          iat: new Date().toISOString(),
+        },
+        requester: { publicKey, metadata: this.client.metadata },
+      });
+
+      console.log("sent request to existing pairing");
+    }
+
+    // SPEC: A generates keyPair X and generates response topic
+    const symKey = generateRandomBytes32();
+
+    // SPEC: Pairing topic is the hash of symkey S
+    const pairingTopic = await this.client.core.crypto.setSymKey(symKey);
+
+    // Preparing pairing URI
+    const pairing = { topic: pairingTopic, expiry, relay, active: false };
+    await this.client.pairing.set(pairingTopic, pairing);
+
+    console.log("Generated new pairing", pairing);
+
+    this.setExpiry(pairingTopic, expiry);
 
     this.client.authKeys.set(AUTH_CLIENT_PUBLIC_KEY_NAME, { publicKey });
 
@@ -116,9 +135,7 @@ export class AuthEngine extends IAuthEngine {
     // Subscribe to response topic
     await this.client.core.relayer.subscribe(responseTopic);
 
-    // SPEC: A will construct an authentication request.
-    // TODO: Fill out the rest of the properties here
-    const { chainId, statement, aud, domain, nonce, type } = params;
+    console.log("sending request to potential pairing");
 
     // SPEC: A encrypts reuqest with symKey S
     // SPEC: A publishes encrypted request to topic
@@ -135,6 +152,8 @@ export class AuthEngine extends IAuthEngine {
       },
       requester: { publicKey, metadata: this.client.metadata },
     });
+
+    console.log("sent request to potential pairing");
 
     const uri = formatUri({
       protocol: this.client.protocol,
