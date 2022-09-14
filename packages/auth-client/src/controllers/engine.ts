@@ -248,8 +248,8 @@ export class AuthEngine extends IAuthEngine {
     const payload = formatJsonRpcRequest(method, params);
     const message = await this.client.core.crypto.encode(topic, payload, encodeOpts);
     const rpcOpts = ENGINE_RPC_OPTS[method].req;
-    await this.client.core.relayer.publish(topic, message, rpcOpts);
     this.client.history.set(topic, payload);
+    await this.client.core.relayer.publish(topic, message, rpcOpts);
 
     return payload.id;
   };
