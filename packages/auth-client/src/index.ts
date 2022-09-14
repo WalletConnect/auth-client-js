@@ -1,6 +1,6 @@
 import { AuthClient as Client } from "./client";
 
-// export * from "./constants";
+export * from "./constants";
 
-export const AuthClient = "Client";
+export const AuthClient = Client;
 export default Client;
