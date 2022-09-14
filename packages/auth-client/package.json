@@ -1,7 +1,7 @@
 {
   "name": "@walletconnect/auth-client",
   "description": "Auth Client for WalletConnect Protocol",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "author": "WalletConnect, Inc. <walletconnect.com>",
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
   "license": "Apache-2.0",
