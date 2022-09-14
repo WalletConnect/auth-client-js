@@ -276,6 +276,39 @@ describe("AuthClient", () => {
     });
   });
 
+  describe("ping", () => {
+    it("can ping a peer on a known pairing", async () => {
+      let receivedAuthRequest = false;
+      let receivedClientPing = false;
+      let receivedPeerPing = false;
+
+      peer.once("auth_request", () => {
+        receivedAuthRequest = true;
+      });
+      peer.once("pairing_ping", () => {
+        receivedClientPing = true;
+      });
+      client.once("pairing_ping", () => {
+        receivedPeerPing = true;
+      });
+
+      const { uri } = await client.request(defaultRequestParams);
+
+      await peer.pair({ uri });
+
+      await waitForEvent(() => receivedAuthRequest);
+
+      const topic = client.pairing.keys[0];
+      await client.ping({ topic });
+      await peer.ping({ topic });
+
+      await waitForEvent(() => receivedClientPing && receivedPeerPing);
+
+      expect(receivedClientPing).to.eql(true);
+      expect(receivedPeerPing).to.eql(true);
+    });
+  });
+
   describe("disconnect", () => {
     it("removes the disconnected pairing", async () => {
       let receivedAuthRequest = false;

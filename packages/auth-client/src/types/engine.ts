@@ -120,6 +120,8 @@ export abstract class IAuthEngine {
 
   public abstract getPairings(): PairingTypes.Struct[];
 
+  public abstract ping(params: { topic: string }): Promise<void>;
+
   public abstract disconnect(params: { topic: string }): Promise<void>;
 
   // ---------- Protected Helpers --------------------------------------- //
@@ -169,6 +171,16 @@ export abstract class IAuthEngine {
   protected abstract onAuthResponse(
     topic: string,
     payload: JsonRpcResult<JsonRpcTypes.Results["wc_authRequest"]> | JsonRpcError,
+  ): void;
+
+  protected abstract onPairingPingRequest(
+    topic: string,
+    payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_pairingPing"]>,
+  ): Promise<void>;
+
+  protected abstract onPairingPingResponse(
+    topic: string,
+    payload: JsonRpcResult<JsonRpcTypes.Results["wc_pairingPing"]> | JsonRpcError,
   ): void;
 
   protected abstract onPairingDeleteRequest(

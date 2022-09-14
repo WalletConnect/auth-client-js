@@ -150,6 +150,15 @@ export class AuthClient extends IAuthClient {
     }
   };
 
+  public ping: IAuthClient["ping"] = async (params) => {
+    try {
+      return await this.engine.ping(params);
+    } catch (error: any) {
+      this.logger.error(error.message);
+      throw error;
+    }
+  };
+
   public disconnect: IAuthClient["disconnect"] = async (params) => {
     try {
       return await this.engine.disconnect(params);

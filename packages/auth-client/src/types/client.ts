@@ -14,7 +14,7 @@ export declare namespace AuthClientTypes {
 
   // ---------- Event Types ----------------------------------------------- //
 
-  type Event = "auth_request" | "auth_response" | "pairing_delete";
+  type Event = "auth_request" | "auth_response" | "pairing_ping" | "pairing_delete";
 
   interface BaseEventArgs<T = unknown> {
     id: number;
@@ -25,6 +25,7 @@ export declare namespace AuthClientTypes {
   interface EventArguments {
     auth_request: BaseEventArgs<any>;
     auth_response: BaseEventArgs<any>;
+    pairing_ping: BaseEventArgs<any>;
     pairing_delete: BaseEventArgs<any>;
   }
 
@@ -77,6 +78,7 @@ export abstract class IAuthClient {
   public abstract respond: IAuthEngine["respond"];
   public abstract getPendingRequests: IAuthEngine["getPendingRequests"];
   public abstract getPairings: IAuthEngine["getPairings"];
+  public abstract ping: IAuthEngine["ping"];
   public abstract disconnect: IAuthEngine["disconnect"];
 
   // ---------- Event Handlers ----------------------------------------------- //
