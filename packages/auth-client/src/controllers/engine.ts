@@ -229,8 +229,9 @@ export class AuthEngine extends IAuthEngine {
   // ---------- Private Helpers --------------------------------------- //
 
   private deletePairing = async (topic: string) => {
+    // Await the unsubscribe first to avoid deleting the symKey too early below.
+    await this.client.core.relayer.unsubscribe(topic);
     await Promise.all([
-      this.client.core.relayer.unsubscribe(topic),
       this.client.pairing.delete(topic, getSdkError("USER_DISCONNECTED")),
       this.client.core.crypto.deleteSymKey(topic),
       this.client.expirer.del(topic),
