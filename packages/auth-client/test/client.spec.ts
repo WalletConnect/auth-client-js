@@ -1,7 +1,6 @@
 import { expect, describe, it, beforeEach, beforeAll, vi } from "vitest";
 import ethers from "ethers";
-import { AuthClient } from "../src/client";
-import { AuthEngineTypes } from "../src/types";
+import { AuthClient, generateNonce, IAuthClient, AuthEngineTypes } from "../src";
 
 const metadataRequester = {
   name: "client (requester)",
@@ -21,7 +20,7 @@ const defaultRequestParams: AuthEngineTypes.RequestParams = {
   aud: "http://localhost:3000/login",
   domain: "localhost:3000",
   chainId: "eip155:1",
-  nonce: "nonce",
+  nonce: generateNonce(),
 };
 
 const waitForRelay = async (waitTimeOverride?: number) => {
@@ -45,8 +44,8 @@ const waitForEvent = async (checkForEvent: (...args: any[]) => boolean) => {
 };
 
 describe("AuthClient", () => {
-  let client: AuthClient;
-  let peer: AuthClient;
+  let client: IAuthClient;
+  let peer: IAuthClient;
   let wallet: ethers.Wallet;
 
   // Mocking five minutes to be five seconds to test expiry.
