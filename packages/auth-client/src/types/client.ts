@@ -36,7 +36,7 @@ export declare namespace AuthClientTypes {
   }
 
   interface EventArguments {
-    auth_request: BaseEventArgs<AuthResponseEventArgs>;
+    auth_request: BaseEventArgs<AuthRequestEventArgs>;
     auth_response: BaseEventArgs<AuthResponseEventArgs>;
     pairing_ping: BaseEventArgs<PairingPingEventArgs>;
     pairing_delete: BaseEventArgs<never>;

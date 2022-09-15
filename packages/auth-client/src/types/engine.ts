@@ -7,7 +7,7 @@ import {
   JsonRpcResponse,
   JsonRpcResult,
 } from "@walletconnect/jsonrpc-utils";
-import { IAuthClient } from "./client";
+import { AuthClientTypes, IAuthClient } from "./client";
 import { JsonRpcTypes } from "./jsonrpc";
 
 export interface RpcOpts {
@@ -90,6 +90,7 @@ export declare namespace AuthEngineTypes {
     id: number;
     requester: {
       publicKey: string;
+      metadata: AuthClientTypes.Metadata;
     };
     cacaoPayload: CacaoPayload;
     message: string;
