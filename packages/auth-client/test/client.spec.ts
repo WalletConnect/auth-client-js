@@ -138,11 +138,11 @@ describe("AuthClient", () => {
 
     await waitForEvent(() => !!uri2);
 
-    expect(uri1).to.eql(uri2);
+    expect(uri1).not.to.eql(uri2);
 
     // Ensure they paired
-    expect(client.pairing.keys).to.eql(peer.pairing.keys);
-    expect(client.pairing.keys.length).to.eql(1);
+    expect(peer.pairing.keys.length).to.eql(1);
+    expect(peer.history.keys.length).to.eql(2);
   });
 
   it("handles incoming auth requests", async () => {
