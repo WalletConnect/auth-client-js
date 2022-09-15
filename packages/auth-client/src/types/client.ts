@@ -6,6 +6,7 @@ import { Pairing } from "../controllers/pairing";
 import { AuthEngineTypes } from "./engine";
 
 import { IAuthEngine } from "../types";
+import { ErrorResponse, JsonRpcError, JsonRpcResult } from "@walletconnect/jsonrpc-utils";
 
 export declare namespace AuthClientTypes {
   // ---------- Data Types ----------------------------------------------- //
@@ -16,6 +17,18 @@ export declare namespace AuthClientTypes {
 
   type Event = "auth_request" | "auth_response" | "pairing_ping" | "pairing_delete";
 
+  interface AuthRequestEventArgs {
+    requester: AuthEngineTypes.PendingRequest["requester"];
+    message: string;
+  }
+
+  type AuthResponseEventArgs =
+    | { message: string; code: number }
+    | JsonRpcResult<AuthEngineTypes.Cacao>
+    | JsonRpcError;
+
+  type PairingPingEventArgs = { error?: ErrorResponse };
+
   interface BaseEventArgs<T = unknown> {
     id: number;
     topic: string;
@@ -23,10 +36,10 @@ export declare namespace AuthClientTypes {
   }
 
   interface EventArguments {
-    auth_request: BaseEventArgs<any>;
-    auth_response: BaseEventArgs<any>;
-    pairing_ping: BaseEventArgs<any>;
-    pairing_delete: BaseEventArgs<any>;
+    auth_request: BaseEventArgs<AuthRequestEventArgs>;
+    auth_response: BaseEventArgs<AuthResponseEventArgs>;
+    pairing_ping: BaseEventArgs<PairingPingEventArgs>;
+    pairing_delete: BaseEventArgs<never>;
   }
 
   interface Options extends CoreTypes.Options {
@@ -90,21 +103,21 @@ export abstract class IAuthClient {
 
   public abstract on: <E extends AuthClientTypes.Event>(
     event: E,
-    listener: (args: AuthClientTypes.EventArguments[E]) => any,
+    listener: (args: AuthClientTypes.EventArguments[E]) => void,
   ) => EventEmitter;
 
   public abstract once: <E extends AuthClientTypes.Event>(
     event: E,
-    listener: (args: AuthClientTypes.EventArguments[E]) => any,
+    listener: (args: AuthClientTypes.EventArguments[E]) => void,
   ) => EventEmitter;
 
   public abstract off: <E extends AuthClientTypes.Event>(
     event: E,
-    listener: (args: AuthClientTypes.EventArguments[E]) => any,
+    listener: (args: AuthClientTypes.EventArguments[E]) => void,
   ) => EventEmitter;
 
   public abstract removeListener: <E extends AuthClientTypes.Event>(
     event: E,
-    listener: (args: AuthClientTypes.EventArguments[E]) => any,
+    listener: (args: AuthClientTypes.EventArguments[E]) => void,
   ) => EventEmitter;
 }

@@ -7,7 +7,7 @@ import {
   JsonRpcResponse,
   JsonRpcResult,
 } from "@walletconnect/jsonrpc-utils";
-import { IAuthClient } from "./client";
+import { AuthClientTypes, IAuthClient } from "./client";
 import { JsonRpcTypes } from "./jsonrpc";
 
 export interface RpcOpts {
@@ -19,6 +19,12 @@ export declare namespace AuthEngineTypes {
   interface EventCallback<T extends JsonRpcRequest | JsonRpcResponse> {
     topic: string;
     payload: T;
+  }
+
+  interface Pairing {
+    relay: RelayerTypes.ProtocolOptions;
+    expiry: number;
+    active: boolean;
   }
 
   // https://github.com/ChainAgnostic/CAIPs/pull/74
@@ -71,7 +77,7 @@ export declare namespace AuthEngineTypes {
   interface CacaoSignature {
     t: "eip191";
     s: string;
-    m?: any;
+    m?: string;
   }
 
   interface Cacao {
@@ -84,6 +90,7 @@ export declare namespace AuthEngineTypes {
     id: number;
     requester: {
       publicKey: string;
+      metadata: AuthClientTypes.Metadata;
     };
     cacaoPayload: CacaoPayload;
     message: string;
@@ -108,7 +115,7 @@ export abstract class IAuthEngine {
 
   public abstract init(): Promise<void>;
 
-  public abstract pair(params: { uri: string }): Promise</*Sequence*/ any>;
+  public abstract pair(params: { uri: string }): Promise<AuthEngineTypes.Pairing>;
 
   public abstract request(
     params: AuthEngineTypes.RequestParams,
