@@ -20,6 +20,8 @@ import {
   isExpired,
   getSdkError,
   isValidString,
+  createDelayedPromise,
+  engineEvent,
 } from "@walletconnect/utils";
 import { utils } from "ethers";
 import { JsonRpcTypes, IAuthEngine, AuthEngineTypes } from "../types";
@@ -132,7 +134,9 @@ export class AuthEngine extends IAuthEngine {
 
     await this.client.pairingTopics.set(responseTopic, { pairingTopic });
 
-    // Subscribe to response topic
+    // Subscribe to the pairing topic (for pings)
+    await this.client.core.relayer.subscribe(pairingTopic);
+    // Subscribe to auth_response topic
     await this.client.core.relayer.subscribe(responseTopic);
 
     console.log("sending request to potential pairing");
@@ -216,6 +220,22 @@ export class AuthEngine extends IAuthEngine {
     return this.client.pairing.values;
   };
 
+  public ping: IAuthEngine["ping"] = async (params) => {
+    this.isInitialized();
+    // TODO: implement validation
+    // await this.isValidPing(params);
+    const { topic } = params;
+    if (this.client.pairing.keys.includes(topic)) {
+      const id = await this.sendRequest(topic, "wc_pairingPing", {});
+      const { done, resolve, reject } = createDelayedPromise<void>();
+      this.client.events.once(engineEvent("pairing_ping", id), ({ error }) => {
+        if (error) reject(error);
+        else resolve();
+      });
+      await done();
+    }
+  };
+
   public disconnect: IAuthEngine["disconnect"] = async (params) => {
     this.isInitialized();
     const { topic } = params;
@@ -229,8 +249,9 @@ export class AuthEngine extends IAuthEngine {
   // ---------- Private Helpers --------------------------------------- //
 
   private deletePairing = async (topic: string) => {
+    // Await the unsubscribe first to avoid deleting the symKey too early below.
+    await this.client.core.relayer.unsubscribe(topic);
     await Promise.all([
-      this.client.core.relayer.unsubscribe(topic),
       this.client.pairing.delete(topic, getSdkError("USER_DISCONNECTED")),
       this.client.core.crypto.deleteSymKey(topic),
       this.client.expirer.del(topic),
@@ -248,8 +269,8 @@ export class AuthEngine extends IAuthEngine {
     const payload = formatJsonRpcRequest(method, params);
     const message = await this.client.core.crypto.encode(topic, payload, encodeOpts);
     const rpcOpts = ENGINE_RPC_OPTS[method].req;
-    await this.client.core.relayer.publish(topic, message, rpcOpts);
     this.client.history.set(topic, payload);
+    await this.client.core.relayer.publish(topic, message, rpcOpts);
 
     return payload.id;
   };
@@ -330,6 +351,8 @@ export class AuthEngine extends IAuthEngine {
     switch (reqMethod) {
       case "wc_authRequest":
         return this.onAuthRequest(topic, payload);
+      case "wc_pairingPing":
+        return this.onPairingPingRequest(topic, payload);
       case "wc_pairingDelete":
         return this.onPairingDeleteRequest(topic, payload);
       default:
@@ -345,6 +368,8 @@ export class AuthEngine extends IAuthEngine {
     switch (resMethod) {
       case "wc_authRequest":
         return this.onAuthResponse(topic, payload);
+      case "wc_pairingPing":
+        return this.onPairingPingResponse(topic, payload);
 
       default:
         return this.client.logger.info(`Unsupported response method ${resMethod}`);
@@ -473,6 +498,29 @@ export class AuthEngine extends IAuthEngine {
       }
     } else if (isJsonRpcError(response)) {
       this.client.emit("auth_response", { id, topic, params: response });
+    }
+  };
+
+  protected onPairingPingRequest: IAuthEngine["onPairingPingRequest"] = async (topic, payload) => {
+    const { id } = payload;
+    try {
+      // TODO: implement validation
+      // this.isValidPing({ topic });
+
+      await this.sendResult<"wc_pairingPing">(id, topic, true);
+      this.client.events.emit("pairing_ping", { id, topic });
+    } catch (err: any) {
+      await this.sendError(id, topic, err);
+      this.client.logger.error(err);
+    }
+  };
+
+  protected onPairingPingResponse: IAuthEngine["onPairingPingResponse"] = (_topic, payload) => {
+    const { id } = payload;
+    if (isJsonRpcResult(payload)) {
+      this.client.events.emit(engineEvent("pairing_ping", id), {});
+    } else if (isJsonRpcError(payload)) {
+      this.client.events.emit(engineEvent("pairing_ping", id), { error: payload.error });
     }
   };
 

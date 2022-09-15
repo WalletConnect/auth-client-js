@@ -9,15 +9,20 @@ import pino from "pino";
 
 import { AuthClientTypes, IAuthClient } from "./types";
 import { JsonRpcHistory, AuthEngine } from "./controllers";
-import { AUTH_CLIENT_PROTOCOL, AUTH_CLIENT_STORAGE_PREFIX, AUTH_CLIENT_VERSION } from "./constants";
+import {
+  AUTH_CLIENT_PROTOCOL,
+  AUTH_CLIENT_STORAGE_PREFIX,
+  AUTH_CLIENT_VERSION,
+  AUTH_CLIENT_DEFAULT_NAME,
+} from "./constants";
 import { Pairing } from "./controllers/pairing";
 import { Expirer } from "./controllers/expirer";
 
 export class AuthClient extends IAuthClient {
   public readonly protocol = AUTH_CLIENT_PROTOCOL;
   public readonly version = AUTH_CLIENT_VERSION;
-  public readonly name = "authClient";
 
+  public name: IAuthClient["name"] = AUTH_CLIENT_DEFAULT_NAME;
   public core: IAuthClient["core"];
   public metadata: IAuthClient["metadata"];
   public logger: IAuthClient["logger"];
@@ -50,6 +55,7 @@ export class AuthClient extends IAuthClient {
             }),
           );
 
+    this.name = opts?.name || AUTH_CLIENT_DEFAULT_NAME;
     this.metadata = opts.metadata;
     this.core = opts.core || new Core(opts);
     this.logger = generateChildLogger(logger, this.name);
@@ -138,6 +144,15 @@ export class AuthClient extends IAuthClient {
   public getPairings: IAuthClient["getPairings"] = () => {
     try {
       return this.engine.getPairings();
+    } catch (error: any) {
+      this.logger.error(error.message);
+      throw error;
+    }
+  };
+
+  public ping: IAuthClient["ping"] = async (params) => {
+    try {
+      return await this.engine.ping(params);
     } catch (error: any) {
       this.logger.error(error.message);
       throw error;

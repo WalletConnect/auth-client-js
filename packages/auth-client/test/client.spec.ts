@@ -63,6 +63,7 @@ describe("AuthClient", () => {
 
   beforeEach(async () => {
     client = await AuthClient.init({
+      name: "testClient",
       logger: "error",
       relayUrl: process.env.TEST_RELAY_URL || "wss://staging.relay.walletconnect.com",
       projectId: process.env.TEST_PROJECT_ID,
@@ -73,6 +74,7 @@ describe("AuthClient", () => {
     });
 
     peer = await AuthClient.init({
+      name: "testPeer",
       logger: "error",
       relayUrl: process.env.TEST_RELAY_URL || "wss://staging.relay.walletconnect.com",
       projectId: process.env.TEST_PROJECT_ID,
@@ -271,6 +273,39 @@ describe("AuthClient", () => {
       expect(clientPairings.length).to.eql(1);
       expect(peerPairings.length).to.eql(1);
       expect(clientPairings[0].topic).to.eql(peerPairings[0].topic);
+    });
+  });
+
+  describe("ping", () => {
+    it("can ping a peer on a known pairing", async () => {
+      let receivedAuthRequest = false;
+      let receivedClientPing = false;
+      let receivedPeerPing = false;
+
+      peer.once("auth_request", () => {
+        receivedAuthRequest = true;
+      });
+      peer.once("pairing_ping", () => {
+        receivedClientPing = true;
+      });
+      client.once("pairing_ping", () => {
+        receivedPeerPing = true;
+      });
+
+      const { uri } = await client.request(defaultRequestParams);
+
+      await peer.pair({ uri });
+
+      await waitForEvent(() => receivedAuthRequest);
+
+      const topic = client.pairing.keys[0];
+      await client.ping({ topic });
+      await peer.ping({ topic });
+
+      await waitForEvent(() => receivedClientPing && receivedPeerPing);
+
+      expect(receivedClientPing).to.eql(true);
+      expect(receivedPeerPing).to.eql(true);
     });
   });
 
