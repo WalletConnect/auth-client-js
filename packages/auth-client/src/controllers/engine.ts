@@ -59,7 +59,7 @@ export class AuthEngine extends IAuthEngine {
 
     const { topic, symKey, relay } = parseUri(uri);
     const expiry = calcExpiry(FOUR_WEEKS);
-    const pairing = { relay, expiry, active: true };
+    const pairing: AuthEngineTypes.Pairing = { relay, expiry, active: true };
     await this.client.pairing.set(topic, {
       topic,
       ...pairing,
