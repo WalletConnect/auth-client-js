@@ -4,6 +4,12 @@
 
 - Requires Node v16 to run tests due to [this issue with ethers + Node v17+](https://github.com/webpack/webpack/issues/14532).
 
+## Installation
+
+```sh
+npm install
+```
+
 ## Commands
 
 - `clean` - Removes build folders from all packages
