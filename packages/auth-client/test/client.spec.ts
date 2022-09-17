@@ -1,5 +1,5 @@
 import { expect, describe, it, beforeEach, beforeAll, vi } from "vitest";
-import ethers from "ethers";
+import { Wallet } from "@ethersproject/wallet";
 import { AuthClient, generateNonce, IAuthClient, AuthEngineTypes } from "../src";
 
 const metadataRequester = {
@@ -46,7 +46,7 @@ const waitForEvent = async (checkForEvent: (...args: any[]) => boolean) => {
 describe("AuthClient", () => {
   let client: IAuthClient;
   let peer: IAuthClient;
-  let wallet: ethers.Wallet;
+  let wallet: Wallet;
 
   // Mocking five minutes to be five seconds to test expiry.
   // Modified constant instead of functions to be as close as possible to actual
@@ -58,7 +58,7 @@ describe("AuthClient", () => {
 
   // Set up a wallet to use as the external signer.
   beforeAll(() => {
-    wallet = ethers.Wallet.createRandom();
+    wallet = Wallet.createRandom();
   });
 
   beforeEach(async () => {
