@@ -23,7 +23,7 @@ import {
   createDelayedPromise,
   engineEvent,
 } from "@walletconnect/utils";
-import { utils } from "ethers";
+import { verifyMessage } from "@ethersproject/wallet";
 import { JsonRpcTypes, IAuthEngine, AuthEngineTypes } from "../types";
 import { EXPIRER_EVENTS, AUTH_CLIENT_PUBLIC_KEY_NAME, ENGINE_RPC_OPTS } from "../constants";
 import { getDidAddress, getDidChainId } from "../utils/address";
@@ -481,7 +481,7 @@ export class AuthEngine extends IAuthEngine {
       console.log("payload.iss:", payload.iss);
       console.log("signature:", signature);
 
-      const address = utils.verifyMessage(reconstructed, signature.s);
+      const address = verifyMessage(reconstructed, signature.s);
       const walletAddress = getDidAddress(payload.iss);
 
       console.log("Recovered address from signature:", address);
