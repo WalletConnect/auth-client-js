@@ -176,8 +176,10 @@ describe("AuthClient", () => {
       });
     });
 
-    client.once("auth_response", (args) => {
-      errorResponse = Boolean(args.params.error.code);
+    client.once("auth_response", ({ params }) => {
+      if ("error" in params) {
+        errorResponse = Boolean(params.error.code);
+      }
       hasResponded = true;
     });
 
@@ -210,8 +212,10 @@ describe("AuthClient", () => {
       });
     });
 
-    client.once("auth_response", (args) => {
-      successfulResponse = Boolean(args.params.result?.s);
+    client.once("auth_response", ({ params }) => {
+      if ("result" in params) {
+        successfulResponse = Boolean(params.result?.s);
+      }
       hasResponded = true;
     });
 
