@@ -35,7 +35,11 @@
     "node": "16"
   },
   "dependencies": {
-    "@ethersproject/wallet": "^5.7.0",
+    "@ethersproject/bytes": "^5.7.0",
+    "@ethersproject/contracts": "^5.7.0",
+    "@ethersproject/hash": "^5.7.0",
+    "@ethersproject/providers": "^5.7.1",
+    "@ethersproject/transactions": "^5.7.0",
     "@stablelib/random": "1.0.2",
     "@walletconnect/core": "2.0.0-rc.2",
     "@walletconnect/events": "1.0.0",
@@ -50,6 +54,7 @@
     "pino-pretty": "4.3.0"
   },
   "devDependencies": {
+    "@ethersproject/wallet": "^5.7.0",
     "@walletconnect/jsonrpc-ws-connection": "1.0.3",
     "@walletconnect/relay-api": "1.0.6",
     "@walletconnect/types": "2.0.0-rc.2",

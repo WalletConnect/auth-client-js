@@ -25,6 +25,8 @@ export class AuthClient extends IAuthClient {
   public name: IAuthClient["name"] = AUTH_CLIENT_DEFAULT_NAME;
   public core: IAuthClient["core"];
   public metadata: IAuthClient["metadata"];
+  public address: IAuthClient["address"];
+  public projectId: IAuthClient["projectId"];
   public logger: IAuthClient["logger"];
   public events: IAuthClient["events"] = new EventEmitter();
   public engine: IAuthClient["engine"];
@@ -34,7 +36,6 @@ export class AuthClient extends IAuthClient {
   public authKeys: IAuthClient["authKeys"];
   public pairingTopics: IAuthClient["pairingTopics"];
   public requests: IAuthClient["requests"];
-  public address: IAuthClient["address"];
 
   static async init(opts: AuthClientTypes.Options) {
     const client = new AuthClient(opts);
@@ -57,6 +58,8 @@ export class AuthClient extends IAuthClient {
 
     this.name = opts?.name || AUTH_CLIENT_DEFAULT_NAME;
     this.metadata = opts.metadata;
+    this.address = opts.iss;
+    this.projectId = opts.projectId;
     this.core = opts.core || new Core(opts);
     this.logger = generateChildLogger(logger, this.name);
     this.authKeys = new Store(this.core, this.logger, "authKeys", AUTH_CLIENT_STORAGE_PREFIX);
@@ -71,7 +74,6 @@ export class AuthClient extends IAuthClient {
     this.expirer = new Expirer(this.core, this.logger);
     this.engine = new AuthEngine(this);
     this.history = new JsonRpcHistory(this.core, this.logger);
-    this.address = opts.iss;
   }
 
   get context() {
