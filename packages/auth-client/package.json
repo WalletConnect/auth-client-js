@@ -37,7 +37,7 @@
   "dependencies": {
     "@ethersproject/wallet": "^5.7.0",
     "@stablelib/random": "1.0.2",
-    "@walletconnect/core": "2.0.0-rc.2",
+    "@walletconnect/core": "2.0.0-2cf22fb.0",
     "@walletconnect/events": "1.0.0",
     "@walletconnect/heartbeat": "1.0.0",
     "@walletconnect/jsonrpc-provider": "1.0.5",
@@ -54,6 +54,6 @@
     "@walletconnect/relay-api": "1.0.6",
     "@walletconnect/types": "2.0.0-rc.2",
     "aws-sdk": "^2.1169.0",
-    "better-sqlite3": "7.6.2"
+    "lokijs": "^1.5.12"
   }
 }

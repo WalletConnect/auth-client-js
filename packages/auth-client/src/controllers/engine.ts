@@ -60,7 +60,7 @@ export class AuthEngine extends IAuthEngine {
     const { topic, symKey, relay } = parseUri(uri);
     const expiry = calcExpiry(FOUR_WEEKS);
     const pairing: AuthEngineTypes.Pairing = { relay, expiry, active: true };
-    await this.client.pairing.set(topic, {
+    await this.client.core.pairing.pairings.set(topic, {
       topic,
       ...pairing,
     });
@@ -82,7 +82,7 @@ export class AuthEngine extends IAuthEngine {
     // SPEC: A will construct an authentication request.
     const { chainId, statement, aud, domain, nonce, type } = params;
 
-    const existingPairings = this.client.pairing.getAll({ active: true });
+    const existingPairings = this.client.core.pairing.pairings.getAll({ active: true });
     const relay = { protocol: RELAYER_DEFAULT_PROTOCOL };
 
     const expiry = calcExpiry(FIVE_MINUTES);
@@ -122,7 +122,7 @@ export class AuthEngine extends IAuthEngine {
 
     // Preparing pairing URI
     const pairing = { topic: pairingTopic, expiry, relay, active: false };
-    await this.client.pairing.set(pairingTopic, pairing);
+    await this.client.core.pairing.pairings.set(pairingTopic, pairing);
 
     console.log("Generated new pairing", pairing);
 
@@ -217,7 +217,7 @@ export class AuthEngine extends IAuthEngine {
   };
 
   public getPairings: IAuthEngine["getPairings"] = () => {
-    return this.client.pairing.values;
+    return this.client.core.pairing.pairings.values;
   };
 
   public ping: IAuthEngine["ping"] = async (params) => {
@@ -225,7 +225,7 @@ export class AuthEngine extends IAuthEngine {
     // TODO: implement validation
     // await this.isValidPing(params);
     const { topic } = params;
-    if (this.client.pairing.keys.includes(topic)) {
+    if (this.client.core.pairing.pairings.keys.includes(topic)) {
       const id = await this.sendRequest(topic, "wc_pairingPing", {});
       const { done, resolve, reject } = createDelayedPromise<void>();
       this.client.events.once(engineEvent("pairing_ping", id), ({ error }) => {
@@ -240,7 +240,7 @@ export class AuthEngine extends IAuthEngine {
     this.isInitialized();
     const { topic } = params;
     await this.isValidPairingTopic(topic);
-    if (this.client.pairing.keys.includes(topic)) {
+    if (this.client.core.pairing.pairings.keys.includes(topic)) {
       await this.sendRequest(topic, "wc_pairingDelete", getSdkError("USER_DISCONNECTED"));
       await this.deletePairing(topic);
     }
@@ -252,17 +252,17 @@ export class AuthEngine extends IAuthEngine {
     // Await the unsubscribe first to avoid deleting the symKey too early below.
     await this.client.core.relayer.unsubscribe(topic);
     await Promise.all([
-      this.client.pairing.delete(topic, getSdkError("USER_DISCONNECTED")),
+      this.client.core.pairing.pairings.delete(topic, getSdkError("USER_DISCONNECTED")),
       this.client.core.crypto.deleteSymKey(topic),
-      this.client.expirer.del(topic),
+      this.client.core.expirer.del(topic),
     ]);
   };
 
   protected setExpiry: IAuthEngine["setExpiry"] = async (topic, expiry) => {
-    if (this.client.pairing.keys.includes(topic)) {
-      await this.client.pairing.update(topic, { expiry });
+    if (this.client.core.pairing.pairings.keys.includes(topic)) {
+      await this.client.core.pairing.pairings.update(topic, { expiry });
     }
-    this.client.expirer.set(topic, expiry);
+    this.client.core.expirer.set(topic, expiry);
   };
 
   protected sendRequest: IAuthEngine["sendRequest"] = async (topic, method, params, encodeOpts) => {
@@ -301,7 +301,7 @@ export class AuthEngine extends IAuthEngine {
 
   protected cleanup: IAuthEngine["cleanup"] = async () => {
     const pairingTopics: string[] = [];
-    this.client.pairing.getAll().forEach((pairing) => {
+    this.client.core.pairing.pairings.getAll().forEach((pairing) => {
       if (isExpired(pairing.expiry)) pairingTopics.push(pairing.topic);
     });
     await Promise.all([...pairingTopics.map(this.deletePairing)]);
@@ -465,7 +465,7 @@ export class AuthEngine extends IAuthEngine {
     const { pairingTopic } = this.client.pairingTopics.get(topic);
 
     const newExpiry = calcExpiry(FOUR_WEEKS);
-    this.client.pairing.update(pairingTopic, {
+    this.client.core.pairing.pairings.update(pairingTopic, {
       active: true,
       expiry: newExpiry,
     });
@@ -544,10 +544,10 @@ export class AuthEngine extends IAuthEngine {
   // ---------- Expirer Events ---------------------------------------- //
 
   private registerExpirerEvents() {
-    this.client.expirer.on(EXPIRER_EVENTS.expired, async (event: ExpirerTypes.Expiration) => {
+    this.client.core.expirer.on(EXPIRER_EVENTS.expired, async (event: ExpirerTypes.Expiration) => {
       const { topic } = parseExpirerTarget(event.target);
       if (topic) {
-        if (this.client.pairing.keys.includes(topic)) {
+        if (this.client.core.pairing.pairings.keys.includes(topic)) {
           await this.deletePairing(topic);
           this.client.events.emit("pairing_expire", { topic });
         }
@@ -565,14 +565,14 @@ export class AuthEngine extends IAuthEngine {
       );
       throw new Error(message);
     }
-    if (!this.client.pairing.keys.includes(topic)) {
+    if (!this.client.core.pairing.pairings.keys.includes(topic)) {
       const { message } = getInternalError(
         "NO_MATCHING_KEY",
         `pairing topic doesn't exist: ${topic}`,
       );
       throw new Error(message);
     }
-    if (isExpired(this.client.pairing.get(topic).expiry)) {
+    if (isExpired(this.client.core.pairing.pairings.get(topic).expiry)) {
       await this.deletePairing(topic);
       const { message } = getInternalError("EXPIRED", `pairing topic: ${topic}`);
       throw new Error(message);

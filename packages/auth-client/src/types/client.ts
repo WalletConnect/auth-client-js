@@ -1,8 +1,6 @@
 import { ICore, IJsonRpcHistory, IStore, CoreTypes } from "@walletconnect/types";
 import EventEmitter from "events";
 import { Logger } from "pino";
-import { Expirer } from "../controllers/expirer";
-import { Pairing } from "../controllers/pairing";
 import { AuthEngineTypes } from "./engine";
 
 import { IAuthEngine } from "../types";
@@ -74,8 +72,6 @@ export abstract class IAuthClient {
     { id: number } & (AuthEngineTypes.Cacao | AuthEngineTypes.PendingRequest)
   >;
 
-  public abstract pairing: Pairing;
-  public abstract expirer: Expirer;
   public abstract events: EventEmitter;
   public abstract logger: Logger;
   public abstract engine: IAuthEngine;

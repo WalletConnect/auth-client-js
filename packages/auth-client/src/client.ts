@@ -15,8 +15,6 @@ import {
   AUTH_CLIENT_VERSION,
   AUTH_CLIENT_DEFAULT_NAME,
 } from "./constants";
-import { Pairing } from "./controllers/pairing";
-import { Expirer } from "./controllers/expirer";
 
 export class AuthClient extends IAuthClient {
   public readonly protocol = AUTH_CLIENT_PROTOCOL;
@@ -28,8 +26,6 @@ export class AuthClient extends IAuthClient {
   public logger: IAuthClient["logger"];
   public events: IAuthClient["events"] = new EventEmitter();
   public engine: IAuthClient["engine"];
-  public pairing: IAuthClient["pairing"];
-  public expirer: IAuthClient["expirer"];
   public history: IAuthClient["history"];
   public authKeys: IAuthClient["authKeys"];
   public pairingTopics: IAuthClient["pairingTopics"];
@@ -67,8 +63,6 @@ export class AuthClient extends IAuthClient {
       AUTH_CLIENT_STORAGE_PREFIX,
     );
     this.requests = new Store(this.core, this.logger, "requests", AUTH_CLIENT_STORAGE_PREFIX);
-    this.pairing = new Pairing(this.core, this.logger);
-    this.expirer = new Expirer(this.core, this.logger);
     this.engine = new AuthEngine(this);
     this.history = new JsonRpcHistory(this.core, this.logger);
     this.address = opts.iss;
@@ -174,11 +168,9 @@ export class AuthClient extends IAuthClient {
     this.logger.trace(`Initialized`);
     try {
       await this.core.start();
-      await this.pairing.init();
       await this.authKeys.init();
       await this.requests.init();
       await this.pairingTopics.init();
-      await this.expirer.init();
       await this.history.init();
       await this.engine.init();
       this.logger.info(`AuthClient Initialization Success`);
