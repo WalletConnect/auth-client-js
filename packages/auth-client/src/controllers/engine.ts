@@ -217,7 +217,7 @@ export class AuthEngine extends IAuthEngine {
   };
 
   public getPairings: IAuthEngine["getPairings"] = () => {
-    return this.client.core.pairing.pairings.values;
+    return this.client.core.pairing.getPairings();
   };
 
   public ping: IAuthEngine["ping"] = async (params) => {

@@ -185,14 +185,14 @@ describe("AuthClient", () => {
 
     const { uri } = await client.request(defaultRequestParams);
 
-    expect(client.core.pairing.pairings.values.length).to.eql(1);
-    expect(client.core.pairing.pairings.values[0].active).to.eql(false);
+    expect(client.core.pairing.getPairings().length).to.eql(1);
+    expect(client.core.pairing.getPairings()[0].active).to.eql(false);
 
     await peer.pair({ uri });
 
     await waitForEvent(() => hasResponded);
 
-    expect(client.core.pairing.pairings.values[0].active).to.eql(true);
+    expect(client.core.pairing.getPairings()[0].active).to.eql(true);
 
     expect(hasResponded).to.eql(true);
     expect(errorResponse).to.eql(true);
@@ -221,14 +221,14 @@ describe("AuthClient", () => {
 
     const { uri } = await client.request(defaultRequestParams);
 
-    expect(client.core.pairing.pairings.values.length).to.eql(1);
-    expect(client.core.pairing.pairings.values[0].active).to.eql(false);
+    expect(client.core.pairing.getPairings().length).to.eql(1);
+    expect(client.core.pairing.getPairings()[0].active).to.eql(false);
 
     await peer.pair({ uri });
 
     await waitForEvent(() => hasResponded);
 
-    expect(client.core.pairing.pairings.values[0].active).to.eql(true);
+    expect(client.core.pairing.getPairings()[0].active).to.eql(true);
 
     expect(hasResponded).to.eql(true);
     expect(successfulResponse).to.eql(true);
@@ -333,11 +333,11 @@ describe("AuthClient", () => {
 
       expect(client.core.pairing.pairings.keys.length).to.eql(1);
       expect(peer.core.pairing.pairings.keys.length).to.eql(1);
-      expect(client.core.pairing.pairings.values[0].topic).to.eql(
-        peer.core.pairing.pairings.values[0].topic,
+      expect(client.core.pairing.getPairings()[0].topic).to.eql(
+        peer.core.pairing.getPairings()[0].topic,
       );
 
-      await client.disconnect({ topic: client.core.pairing.pairings.values[0].topic });
+      await client.disconnect({ topic: client.core.pairing.getPairings()[0].topic });
 
       await waitForEvent(() => peerDeletedPairing);
 
@@ -374,14 +374,14 @@ describe("AuthClient", () => {
 
     const { uri } = await client.request(defaultRequestParams);
 
-    expect(client.core.pairing.pairings.values.length).to.eql(1);
-    expect(client.core.pairing.pairings.values[0].active).to.eql(false);
+    expect(client.core.pairing.getPairings().length).to.eql(1);
+    expect(client.core.pairing.getPairings()[0].active).to.eql(false);
 
     await peer.pair({ uri });
 
     await waitForEvent(() => hasResponded);
 
-    expect(client.core.pairing.pairings.values[0].active).to.eql(true);
+    expect(client.core.pairing.getPairings()[0].active).to.eql(true);
 
     expect(hasResponded).to.eql(true);
     expect(receivedMetadataName).to.eql(metadataRequester.name);
@@ -408,11 +408,11 @@ describe("AuthClient", () => {
 
     expect(client.core.pairing.pairings.keys).to.eql(peer.core.pairing.pairings.keys);
     expect(peer.core.pairing.pairings.keys.length).to.eql(1);
-    expect(client.core.pairing.pairings.values[0].active).to.eql(false);
+    expect(client.core.pairing.getPairings()[0].active).to.eql(false);
 
     await waitForEvent(() => peerHasResponded);
 
-    expect(client.core.pairing.pairings.values[0].active).to.eql(true);
+    expect(client.core.pairing.getPairings()[0].active).to.eql(true);
 
     await waitForRelay(5000);
 
