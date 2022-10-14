@@ -25,7 +25,7 @@ import { AUTH_CLIENT_PUBLIC_KEY_NAME, ENGINE_RPC_OPTS } from "../constants";
 import { getDidAddress, getDidChainId } from "../utils/address";
 import { getPendingRequest, getPendingRequests } from "../utils/store";
 import { isValidPairUri, isValidRequest, isValidRespond } from "../utils/validators";
-import { formatUri, prepareUri } from "../utils/uri";
+import { formatUri } from "../utils/uri";
 
 export class AuthEngine extends IAuthEngine {
   private initialized = false;
@@ -50,7 +50,7 @@ export class AuthEngine extends IAuthEngine {
     if (!isValidPairUri) {
       throw new Error("Invalid pair uri");
     }
-    return await this.client.core.pairing.pair({ uri: prepareUri(uri) });
+    return await this.client.core.pairing.pair({ uri });
   };
 
   public request: IAuthEngine["request"] = async (params: AuthEngineTypes.PayloadParams) => {
