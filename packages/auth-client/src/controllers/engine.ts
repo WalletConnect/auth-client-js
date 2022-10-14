@@ -8,7 +8,7 @@ import {
   isJsonRpcResult,
   isJsonRpcError,
 } from "@walletconnect/jsonrpc-utils";
-import { FIVE_MINUTES, FOUR_WEEKS } from "@walletconnect/time";
+import { FIVE_MINUTES } from "@walletconnect/time";
 import { RelayerTypes } from "@walletconnect/types";
 import {
   calcExpiry,
@@ -16,7 +16,6 @@ import {
   getInternalError,
   hashKey,
   TYPE_1,
-  createDelayedPromise,
   engineEvent,
 } from "@walletconnect/utils";
 import { verifyMessage } from "@ethersproject/wallet";
