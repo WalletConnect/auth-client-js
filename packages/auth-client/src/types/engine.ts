@@ -113,7 +113,7 @@ export declare namespace AuthEngineTypes {
 export abstract class IAuthEngine {
   constructor(public client: IAuthClient) {}
 
-  public abstract init(): Promise<void>;
+  public abstract init(): void;
 
   public abstract pair(params: { uri: string }): Promise<AuthEngineTypes.Pairing>;
 
@@ -156,8 +156,6 @@ export abstract class IAuthEngine {
 
   protected abstract setExpiry(topic: string, expiry: number): Promise<void>;
 
-  protected abstract cleanup(): Promise<void>;
-
   // ---------- Protected Relay Event Methods ----------------------------------- //
 
   protected abstract onRelayEventRequest(
@@ -189,9 +187,4 @@ export abstract class IAuthEngine {
     topic: string,
     payload: JsonRpcResult<JsonRpcTypes.Results["wc_pairingPing"]> | JsonRpcError,
   ): void;
-
-  protected abstract onPairingDeleteRequest(
-    topic: string,
-    payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_pairingDelete"]>,
-  ): Promise<void>;
 }
