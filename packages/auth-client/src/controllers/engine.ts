@@ -17,6 +17,7 @@ import {
   hashKey,
   TYPE_1,
   engineEvent,
+  formatUri,
 } from "@walletconnect/utils";
 import { verifyMessage } from "@ethersproject/wallet";
 import { JsonRpcTypes, IAuthEngine, AuthEngineTypes } from "../types";
@@ -24,7 +25,6 @@ import { AUTH_CLIENT_PUBLIC_KEY_NAME, ENGINE_RPC_OPTS } from "../constants";
 import { getDidAddress, getDidChainId } from "../utils/address";
 import { getPendingRequest, getPendingRequests } from "../utils/store";
 import { isValidPairUri, isValidRequest, isValidRespond } from "../utils/validators";
-import { formatUri } from "../utils/uri";
 
 export class AuthEngine extends IAuthEngine {
   private initialized = false;
