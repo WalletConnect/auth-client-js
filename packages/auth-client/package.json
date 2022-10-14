@@ -1,7 +1,7 @@
 {
   "name": "@walletconnect/auth-client",
   "description": "Auth Client for WalletConnect Protocol",
-  "version": "0.4.0",
+  "version": "0.4.0-806579f4",
   "author": "WalletConnect, Inc. <walletconnect.com>",
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
   "license": "Apache-2.0",
@@ -48,7 +48,7 @@
     "@walletconnect/jsonrpc-utils": "1.0.3",
     "@walletconnect/logger": "1.0.1",
     "@walletconnect/time": "1.0.1",
-    "@walletconnect/utils": "2.0.0-rc.2",
+    "@walletconnect/utils": "2.0.0-2cf22fb.0",
     "events": "^3.3.0",
     "pino": "6.7.0",
     "pino-pretty": "4.3.0"
