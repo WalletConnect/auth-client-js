@@ -66,7 +66,7 @@ describe("AuthClient", () => {
       name: "testClient",
       logger: "error",
       relayUrl: process.env.TEST_RELAY_URL || "wss://staging.relay.walletconnect.com",
-      projectId: process.env.TEST_PROJECT_ID,
+      projectId: process.env.TEST_PROJECT_ID!,
       storageOptions: {
         database: ":memory:",
       },
@@ -77,7 +77,7 @@ describe("AuthClient", () => {
       name: "testPeer",
       logger: "error",
       relayUrl: process.env.TEST_RELAY_URL || "wss://staging.relay.walletconnect.com",
-      projectId: process.env.TEST_PROJECT_ID,
+      projectId: process.env.TEST_PROJECT_ID!,
       storageOptions: {
         database: ":memory:",
       },
@@ -351,7 +351,7 @@ describe("AuthClient", () => {
     client = await AuthClient.init({
       logger: "error",
       relayUrl: process.env.TEST_RELAY_URL || "wss://staging.relay.walletconnect.com",
-      projectId: process.env.TEST_PROJECT_ID,
+      projectId: process.env.TEST_PROJECT_ID!,
       storageOptions: {
         database: ":memory:",
       },

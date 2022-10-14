@@ -75,7 +75,7 @@ export declare namespace AuthEngineTypes {
   }
 
   interface CacaoSignature {
-    t: "eip191";
+    t: "eip191" | "eip1271";
     s: string;
     m?: string;
   }

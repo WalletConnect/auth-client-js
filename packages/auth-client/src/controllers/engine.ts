@@ -19,12 +19,12 @@ import {
   engineEvent,
   formatUri,
 } from "@walletconnect/utils";
-import { verifyMessage } from "@ethersproject/wallet";
 import { JsonRpcTypes, IAuthEngine, AuthEngineTypes } from "../types";
 import { AUTH_CLIENT_PUBLIC_KEY_NAME, ENGINE_RPC_OPTS } from "../constants";
-import { getDidAddress, getDidChainId } from "../utils/address";
+import { getDidAddress, getDidChainId, getNamespacedDidChainId } from "../utils/address";
 import { getPendingRequest, getPendingRequests } from "../utils/store";
 import { isValidPairUri, isValidRequest, isValidRespond } from "../utils/validators";
+import { verifySignature } from "../utils/signature";
 
 export class AuthEngine extends IAuthEngine {
   private initialized = false;
@@ -420,13 +420,26 @@ export class AuthEngine extends IAuthEngine {
       console.log("payload.iss:", payload.iss);
       console.log("signature:", signature);
 
-      const address = verifyMessage(reconstructed, signature.s);
       const walletAddress = getDidAddress(payload.iss);
+      const chainId = getNamespacedDidChainId(payload.iss);
 
-      console.log("Recovered address from signature:", address);
+      if (!walletAddress) {
+        throw new Error("Could not derive address from `payload.iss`");
+      }
+      if (!chainId) {
+        throw new Error("Could not derive chainId from `payload.iss`");
+      }
       console.log("walletAddress extracted from `payload.iss`:", walletAddress);
 
-      if (address !== walletAddress) {
+      const isValid = await verifySignature(
+        walletAddress,
+        reconstructed,
+        signature,
+        chainId,
+        this.client.projectId,
+      );
+
+      if (!isValid) {
         this.client.emit("auth_response", {
           id,
           topic,

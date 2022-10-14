@@ -44,6 +44,7 @@ export declare namespace AuthClientTypes {
     metadata: Metadata;
     core?: ICore;
     iss?: string;
+    projectId: string;
   }
 
   interface Metadata {
@@ -65,6 +66,8 @@ export abstract class IAuthClient {
 
   public abstract core: ICore;
   public abstract metadata: AuthClientTypes.Metadata;
+  public abstract address?: string;
+  public abstract projectId: string;
   public abstract authKeys: IStore<string, { publicKey: string }>;
   public abstract pairingTopics: IStore<string, any>;
   public abstract requests: IStore<
@@ -76,7 +79,6 @@ export abstract class IAuthClient {
   public abstract logger: Logger;
   public abstract engine: IAuthEngine;
   public abstract history: IJsonRpcHistory;
-  public abstract address: string | undefined;
 
   constructor(public opts: AuthClientTypes.Options) {}
 
