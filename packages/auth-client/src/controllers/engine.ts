@@ -203,18 +203,7 @@ export class AuthEngine extends IAuthEngine {
 
   public ping: IAuthEngine["ping"] = async (params) => {
     this.isInitialized();
-    // TODO: implement validation
-    // await this.isValidPing(params);
-    const { topic } = params;
-    if (this.client.core.pairing.pairings.keys.includes(topic)) {
-      const id = await this.sendRequest(topic, "wc_pairingPing", {});
-      const { done, resolve, reject } = createDelayedPromise<void>();
-      this.client.events.once(engineEvent("pairing_ping", id), ({ error }) => {
-        if (error) reject(error);
-        else resolve();
-      });
-      await done();
-    }
+    await this.client.core.pairing.ping(params);
   };
 
   public disconnect: IAuthEngine["disconnect"] = async (params) => {
@@ -226,7 +215,7 @@ export class AuthEngine extends IAuthEngine {
 
   protected setExpiry: IAuthEngine["setExpiry"] = async (topic, expiry) => {
     if (this.client.core.pairing.pairings.keys.includes(topic)) {
-      await this.client.core.pairing.pairings.update(topic, { expiry });
+      await this.client.core.pairing.updateExpiry({ topic, expiry });
     }
     this.client.core.expirer.set(topic, expiry);
   };
@@ -420,12 +409,7 @@ export class AuthEngine extends IAuthEngine {
 
     const { pairingTopic } = this.client.pairingTopics.get(topic);
 
-    const newExpiry = calcExpiry(FOUR_WEEKS);
-    this.client.core.pairing.pairings.update(pairingTopic, {
-      active: true,
-      expiry: newExpiry,
-    });
-    this.setExpiry(pairingTopic, newExpiry);
+    await this.client.core.pairing.activate({ topic: pairingTopic });
 
     if (isJsonRpcResult(response)) {
       const { s: signature, p: payload } = response.result;
