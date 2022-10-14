@@ -1,7 +1,7 @@
 {
   "name": "@walletconnect/auth-client",
   "description": "Auth Client for WalletConnect Protocol",
-  "version": "0.4.0-806579f4",
+  "version": "0.4.0",
   "author": "WalletConnect, Inc. <walletconnect.com>",
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
   "license": "Apache-2.0",
@@ -57,7 +57,7 @@
     "@ethersproject/wallet": "^5.7.0",
     "@walletconnect/jsonrpc-ws-connection": "1.0.3",
     "@walletconnect/relay-api": "1.0.6",
-    "@walletconnect/types": "2.0.0-rc.2",
+    "@walletconnect/types": "2.0.0-2cf22fb.0",
     "aws-sdk": "^2.1169.0",
     "lokijs": "^1.5.12"
   }
