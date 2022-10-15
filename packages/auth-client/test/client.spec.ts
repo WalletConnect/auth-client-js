@@ -92,7 +92,7 @@ describe("AuthClient", () => {
     expect(client.events).toBeDefined();
     expect(client.logger).toBeDefined();
     expect(client.core.expirer).toBeDefined();
-    expect(client.history).toBeDefined();
+    expect(client.core.history).toBeDefined();
     expect(client.core.pairing).toBeDefined();
   });
 
@@ -111,8 +111,8 @@ describe("AuthClient", () => {
     expect(client.core.pairing.pairings.keys.length).to.eql(1);
 
     // Ensure each client published once (request and respond)
-    expect(client.history.records.size).to.eql(peer.history.records.size);
-    expect(client.history.records.size).to.eql(1);
+    expect(client.core.history.records.size).to.eql(peer.core.history.records.size);
+    expect(client.core.history.records.size).to.eql(1);
   });
 
   it("Uses existing pairings", async () => {
@@ -144,7 +144,7 @@ describe("AuthClient", () => {
 
     // Ensure they paired
     expect(peer.core.pairing.pairings.keys.length).to.eql(1);
-    expect(peer.history.keys.length).to.eql(1);
+    expect(peer.core.history.keys.length).to.eql(1);
   });
 
   it("handles incoming auth requests", async () => {

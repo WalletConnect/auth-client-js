@@ -8,7 +8,7 @@ import { EventEmitter } from "events";
 import pino from "pino";
 
 import { AuthClientTypes, IAuthClient } from "./types";
-import { JsonRpcHistory, AuthEngine } from "./controllers";
+import { AuthEngine } from "./controllers";
 import {
   AUTH_CLIENT_PROTOCOL,
   AUTH_CLIENT_STORAGE_PREFIX,
@@ -28,7 +28,6 @@ export class AuthClient extends IAuthClient {
   public logger: IAuthClient["logger"];
   public events: IAuthClient["events"] = new EventEmitter();
   public engine: IAuthClient["engine"];
-  public history: IAuthClient["history"];
   public authKeys: IAuthClient["authKeys"];
   public pairingTopics: IAuthClient["pairingTopics"];
   public requests: IAuthClient["requests"];
@@ -67,7 +66,6 @@ export class AuthClient extends IAuthClient {
     );
     this.requests = new Store(this.core, this.logger, "requests", AUTH_CLIENT_STORAGE_PREFIX);
     this.engine = new AuthEngine(this);
-    this.history = new JsonRpcHistory(this.core, this.logger);
   }
 
   get context() {
@@ -173,7 +171,6 @@ export class AuthClient extends IAuthClient {
       await this.authKeys.init();
       await this.requests.init();
       await this.pairingTopics.init();
-      await this.history.init();
       await this.engine.init();
       this.logger.info(`AuthClient Initialization Success`);
     } catch (error: any) {

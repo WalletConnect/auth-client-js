@@ -223,7 +223,7 @@ export class AuthEngine extends IAuthEngine {
     const payload = formatJsonRpcRequest(method, params);
     const message = await this.client.core.crypto.encode(topic, payload, encodeOpts);
     const rpcOpts = ENGINE_RPC_OPTS[method].req;
-    this.client.history.set(topic, payload);
+    this.client.core.history.set(topic, payload);
     await this.client.core.relayer.publish(topic, message, rpcOpts);
 
     return payload.id;
@@ -232,11 +232,11 @@ export class AuthEngine extends IAuthEngine {
   protected sendResult: IAuthEngine["sendResult"] = async (id, topic, result, encodeOpts) => {
     const payload = formatJsonRpcResult(id, result);
     const message = await this.client.core.crypto.encode(topic, payload, encodeOpts);
-    const record = await this.client.history.get(topic, id);
+    const record = await this.client.core.history.get(topic, id);
     const rpcOpts = ENGINE_RPC_OPTS[record.request.method].res;
 
     await this.client.core.relayer.publish(topic, message, rpcOpts);
-    await this.client.history.resolve(payload);
+    await this.client.core.history.resolve(payload);
 
     return payload.id;
   };
@@ -244,11 +244,11 @@ export class AuthEngine extends IAuthEngine {
   protected sendError: IAuthEngine["sendError"] = async (id, topic, params, encodeOpts) => {
     const payload = formatJsonRpcError(id, params.error);
     const message = await this.client.core.crypto.encode(topic, payload, encodeOpts);
-    const record = await this.client.history.get(topic, id);
+    const record = await this.client.core.history.get(topic, id);
     const rpcOpts = ENGINE_RPC_OPTS[record.request.method].res;
 
     await this.client.core.relayer.publish(topic, message, rpcOpts);
-    await this.client.history.resolve(payload);
+    await this.client.core.history.resolve(payload);
 
     return payload.id;
   };
@@ -280,10 +280,10 @@ export class AuthEngine extends IAuthEngine {
 
         const payload = await this.client.core.crypto.decode(topic, message, opts);
         if (isJsonRpcRequest(payload)) {
-          this.client.history.set(topic, payload);
+          this.client.core.history.set(topic, payload);
           this.onRelayEventRequest({ topic, payload });
         } else if (isJsonRpcResponse(payload)) {
-          await this.client.history.resolve(payload);
+          await this.client.core.history.resolve(payload);
           this.onRelayEventResponse({ topic, payload });
         }
       },
@@ -306,7 +306,7 @@ export class AuthEngine extends IAuthEngine {
 
   protected onRelayEventResponse: IAuthEngine["onRelayEventResponse"] = async (event) => {
     const { topic, payload } = event;
-    const record = await this.client.history.get(topic, payload.id);
+    const record = await this.client.core.history.get(topic, payload.id);
     const resMethod = record.request.method as JsonRpcTypes.WcMethod;
 
     switch (resMethod) {

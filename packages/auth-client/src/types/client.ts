@@ -1,4 +1,4 @@
-import { ICore, IJsonRpcHistory, IStore, CoreTypes } from "@walletconnect/types";
+import { ICore, IStore, CoreTypes } from "@walletconnect/types";
 import EventEmitter from "events";
 import { Logger } from "pino";
 import { AuthEngineTypes } from "./engine";
@@ -78,7 +78,6 @@ export abstract class IAuthClient {
   public abstract events: EventEmitter;
   public abstract logger: Logger;
   public abstract engine: IAuthEngine;
-  public abstract history: IJsonRpcHistory;
 
   constructor(public opts: AuthClientTypes.Options) {}
 
