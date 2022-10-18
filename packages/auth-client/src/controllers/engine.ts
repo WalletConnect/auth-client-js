@@ -49,7 +49,10 @@ export class AuthEngine extends IAuthEngine {
     if (!isValidPairUri) {
       throw new Error("Invalid pair uri");
     }
-    return await this.client.core.pairing.pair({ uri });
+
+    const { topic } = await this.client.core.pairing.pair({ uri });
+    await this.client.core.pairing.activate({ topic });
+    return this.client.core.pairing.pairings.get(topic);
   };
 
   public request: IAuthEngine["request"] = async (params: AuthEngineTypes.PayloadParams) => {

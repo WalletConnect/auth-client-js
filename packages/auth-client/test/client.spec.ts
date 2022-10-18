@@ -97,14 +97,14 @@ describe("AuthClient", () => {
   });
 
   it("Pairs", async () => {
-    let hasPaired = false;
+    let hasRequest = false;
     peer.once("auth_request", () => {
-      hasPaired = true;
+      hasRequest = true;
     });
     const { uri } = await client.request(defaultRequestParams);
 
     await peer.pair({ uri });
-    await waitForEvent(() => hasPaired);
+    await waitForEvent(() => hasRequest);
 
     // Ensure they paired
     expect(client.core.pairing.pairings.keys).to.eql(peer.core.pairing.pairings.keys);
@@ -113,6 +113,9 @@ describe("AuthClient", () => {
     // Ensure each client published once (request and respond)
     expect(client.core.history.records.size).to.eql(peer.core.history.records.size);
     expect(client.core.history.records.size).to.eql(1);
+
+    // Ensure pairing is in expected state
+    expect(peer.core.pairing.pairings.values[0].active).to.eql(true);
   });
 
   it("Uses existing pairings", async () => {
