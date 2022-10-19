@@ -37,6 +37,7 @@ export class AuthEngine extends IAuthEngine {
   public init: IAuthEngine["init"] = () => {
     if (!this.initialized) {
       this.registerRelayerEvents();
+      this.client.core.pairing.register({ methods: Object.keys(ENGINE_RPC_OPTS) });
       this.initialized = true;
     }
   };
