@@ -195,7 +195,7 @@ describe("AuthClient", () => {
 
     await waitForEvent(() => hasResponded);
 
-    expect(client.core.pairing.getPairings()[0].active).to.eql(true);
+    expect(client.core.pairing.getPairings()[0].active).to.eql(false);
 
     expect(hasResponded).to.eql(true);
     expect(errorResponse).to.eql(true);

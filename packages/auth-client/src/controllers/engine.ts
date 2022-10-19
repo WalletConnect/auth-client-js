@@ -410,11 +410,10 @@ export class AuthEngine extends IAuthEngine {
 
     console.log("onAuthResponse", topic, response);
 
-    const { pairingTopic } = this.client.pairingTopics.get(topic);
-
-    await this.client.core.pairing.activate({ topic: pairingTopic });
-
     if (isJsonRpcResult(response)) {
+      const { pairingTopic } = this.client.pairingTopics.get(topic);
+      await this.client.core.pairing.activate({ topic: pairingTopic });
+
       const { s: signature, p: payload } = response.result;
 
       await this.client.requests.set(id, { id, ...response.result });
