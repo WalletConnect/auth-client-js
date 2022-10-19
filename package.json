@@ -33,7 +33,7 @@
     "npm-publish:canary": "npm publish --access public --tag canary --workspaces"
   },
   "engines": {
-    "node": "16"
+    "node": ">=14 <17"
   },
   "repository": {
     "type": "git",

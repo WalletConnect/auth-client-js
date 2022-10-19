@@ -32,7 +32,7 @@
     "prepublishOnly": "npm run build"
   },
   "engines": {
-    "node": "16"
+    "node": ">=14 <17"
   },
   "dependencies": {
     "@ethersproject/bytes": "^5.7.0",
