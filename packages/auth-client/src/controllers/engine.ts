@@ -16,7 +16,6 @@ import {
   getInternalError,
   hashKey,
   TYPE_1,
-  engineEvent,
   formatUri,
 } from "@walletconnect/utils";
 import { JsonRpcTypes, IAuthEngine, AuthEngineTypes } from "../types";
@@ -287,8 +286,6 @@ export class AuthEngine extends IAuthEngine {
     switch (reqMethod) {
       case "wc_authRequest":
         return this.onAuthRequest(topic, payload);
-      case "wc_pairingPing":
-        return this.onPairingPingRequest(topic, payload);
       default:
         return this.client.logger.info(`Unsupported request method ${reqMethod}`);
     }
@@ -302,9 +299,6 @@ export class AuthEngine extends IAuthEngine {
     switch (resMethod) {
       case "wc_authRequest":
         return this.onAuthResponse(topic, payload);
-      case "wc_pairingPing":
-        return this.onPairingPingResponse(topic, payload);
-
       default:
         return this.client.logger.info(`Unsupported response method ${resMethod}`);
     }
@@ -437,29 +431,6 @@ export class AuthEngine extends IAuthEngine {
       }
     } else if (isJsonRpcError(response)) {
       this.client.emit("auth_response", { id, topic, params: response });
-    }
-  };
-
-  protected onPairingPingRequest: IAuthEngine["onPairingPingRequest"] = async (topic, payload) => {
-    const { id } = payload;
-    try {
-      // TODO: implement validation
-      // this.isValidPing({ topic });
-
-      await this.sendResult<"wc_pairingPing">(id, topic, true);
-      this.client.events.emit("pairing_ping", { id, topic });
-    } catch (err: any) {
-      await this.sendError(id, topic, err);
-      this.client.logger.error(err);
-    }
-  };
-
-  protected onPairingPingResponse: IAuthEngine["onPairingPingResponse"] = (_topic, payload) => {
-    const { id } = payload;
-    if (isJsonRpcResult(payload)) {
-      this.client.events.emit(engineEvent("pairing_ping", id), {});
-    } else if (isJsonRpcError(payload)) {
-      this.client.events.emit(engineEvent("pairing_ping", id), { error: payload.error });
     }
   };
 }

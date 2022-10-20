@@ -1,4 +1,4 @@
-import { RelayerTypes, CryptoTypes, PairingTypes } from "@walletconnect/types";
+import { RelayerTypes, CryptoTypes } from "@walletconnect/types";
 
 import {
   ErrorResponse as CommonErrorResponse,
@@ -170,15 +170,5 @@ export abstract class IAuthEngine {
   protected abstract onAuthResponse(
     topic: string,
     payload: JsonRpcResult<JsonRpcTypes.Results["wc_authRequest"]> | JsonRpcError,
-  ): void;
-
-  protected abstract onPairingPingRequest(
-    topic: string,
-    payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_pairingPing"]>,
-  ): Promise<void>;
-
-  protected abstract onPairingPingResponse(
-    topic: string,
-    payload: JsonRpcResult<JsonRpcTypes.Results["wc_pairingPing"]> | JsonRpcError,
   ): void;
 }

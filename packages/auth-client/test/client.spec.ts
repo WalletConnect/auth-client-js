@@ -292,10 +292,10 @@ describe("AuthClient", () => {
       peer.once("auth_request", () => {
         receivedAuthRequest = true;
       });
-      peer.once("pairing_ping", () => {
+      peer.core.pairing.events.once("pairing_ping", () => {
         receivedClientPing = true;
       });
-      client.once("pairing_ping", () => {
+      client.core.pairing.events.once("pairing_ping", () => {
         receivedPeerPing = true;
       });
 
@@ -324,7 +324,7 @@ describe("AuthClient", () => {
       peer.once("auth_request", () => {
         receivedAuthRequest = true;
       });
-      peer.once("pairing_delete", () => {
+      peer.core.pairing.events.once("pairing_delete", () => {
         peerDeletedPairing = true;
       });
 
