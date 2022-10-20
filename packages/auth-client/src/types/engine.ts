@@ -21,12 +21,6 @@ export declare namespace AuthEngineTypes {
     payload: T;
   }
 
-  interface Pairing {
-    relay: RelayerTypes.ProtocolOptions;
-    expiry: number;
-    active: boolean;
-  }
-
   // https://github.com/ChainAgnostic/CAIPs/pull/74
   interface RequestParams {
     chainId: string;
@@ -114,8 +108,6 @@ export abstract class IAuthEngine {
   constructor(public client: IAuthClient) {}
 
   public abstract init(): void;
-
-  public abstract pair(params: { uri: string }): Promise<AuthEngineTypes.Pairing>;
 
   public abstract request(
     params: AuthEngineTypes.RequestParams,

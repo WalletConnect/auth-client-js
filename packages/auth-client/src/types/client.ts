@@ -83,7 +83,6 @@ export abstract class IAuthClient {
 
   // ---------- Public Methods ----------------------------------------------- //
 
-  public abstract pair: IAuthEngine["pair"];
   public abstract request: IAuthEngine["request"];
   public abstract respond: IAuthEngine["respond"];
   public abstract getPendingRequests: IAuthEngine["getPendingRequests"];

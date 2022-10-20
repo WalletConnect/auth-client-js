@@ -22,7 +22,7 @@ import { JsonRpcTypes, IAuthEngine, AuthEngineTypes } from "../types";
 import { AUTH_CLIENT_PUBLIC_KEY_NAME, ENGINE_RPC_OPTS } from "../constants";
 import { getDidAddress, getDidChainId, getNamespacedDidChainId } from "../utils/address";
 import { getPendingRequest, getPendingRequests } from "../utils/store";
-import { isValidPairUri, isValidRequest, isValidRespond } from "../utils/validators";
+import { isValidRequest, isValidRespond } from "../utils/validators";
 import { verifySignature } from "../utils/signature";
 
 export class AuthEngine extends IAuthEngine {
@@ -42,18 +42,6 @@ export class AuthEngine extends IAuthEngine {
   };
 
   // ---------- Public ------------------------------------------------ //
-
-  public pair: IAuthEngine["pair"] = async ({ uri }) => {
-    this.isInitialized();
-
-    if (!isValidPairUri) {
-      throw new Error("Invalid pair uri");
-    }
-
-    const { topic } = await this.client.core.pairing.pair({ uri });
-    await this.client.core.pairing.activate({ topic });
-    return this.client.core.pairing.pairings.get(topic);
-  };
 
   public request: IAuthEngine["request"] = async (params: AuthEngineTypes.PayloadParams) => {
     this.isInitialized();

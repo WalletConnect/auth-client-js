@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { AuthClient } from "../src/client";
-import { isValidPairUri, isValidRequest, isValidRespond } from "../src/utils/validators";
+import { isValidRequest, isValidRespond } from "../src/utils/validators";
 
 const metadataRequester = {
   name: "client (requester)",
@@ -40,21 +40,6 @@ describe("Validation", () => {
         exp: new Date().toISOString(),
       });
 
-      expect(isValid).to.eql(false);
-    });
-  });
-
-  describe("Pairing Validation", () => {
-    it("Validates happy case", () => {
-      const isValid = isValidPairUri("wc:auth-foo@2?relay-protocol=iridium&symKey=key");
-      expect(isValid).to.eql(true);
-    });
-    it("Validates bad case (params)", () => {
-      const isValid = isValidPairUri("wc:foo@2?rely-protocol=irn&symkey=key");
-      expect(isValid).to.eql(false);
-    });
-    it("Validates bad case (topic)", () => {
-      const isValid = isValidPairUri("wc:?relay-protocol=irn&symKey=key");
       expect(isValid).to.eql(false);
     });
   });

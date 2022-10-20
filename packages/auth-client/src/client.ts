@@ -96,16 +96,6 @@ export class AuthClient extends IAuthClient {
 
   // ---------- Engine ----------------------------------------------- //
 
-  // for responder to pair a pairing created by a proposer
-  public pair: IAuthClient["pair"] = async (params) => {
-    try {
-      return await this.engine.pair(params);
-    } catch (error: any) {
-      this.logger.error(error.message);
-      throw error;
-    }
-  };
-
   // request wallet authentication
   public request: IAuthClient["request"] = async (params) => {
     try {
