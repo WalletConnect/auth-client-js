@@ -1,4 +1,4 @@
-import { RelayerTypes, CryptoTypes, PairingTypes } from "@walletconnect/types";
+import { RelayerTypes, CryptoTypes } from "@walletconnect/types";
 
 import {
   ErrorResponse as CommonErrorResponse,
@@ -19,12 +19,6 @@ export declare namespace AuthEngineTypes {
   interface EventCallback<T extends JsonRpcRequest | JsonRpcResponse> {
     topic: string;
     payload: T;
-  }
-
-  interface Pairing {
-    relay: RelayerTypes.ProtocolOptions;
-    expiry: number;
-    active: boolean;
   }
 
   // https://github.com/ChainAgnostic/CAIPs/pull/74
@@ -113,9 +107,7 @@ export declare namespace AuthEngineTypes {
 export abstract class IAuthEngine {
   constructor(public client: IAuthClient) {}
 
-  public abstract init(): Promise<void>;
-
-  public abstract pair(params: { uri: string }): Promise<AuthEngineTypes.Pairing>;
+  public abstract init(): void;
 
   public abstract request(
     params: AuthEngineTypes.RequestParams,
@@ -124,12 +116,6 @@ export abstract class IAuthEngine {
   public abstract respond(params: AuthEngineTypes.RespondParams): Promise<void>;
 
   public abstract getPendingRequests(): Record<number, AuthEngineTypes.PendingRequest>;
-
-  public abstract getPairings(): PairingTypes.Struct[];
-
-  public abstract ping(params: { topic: string }): Promise<void>;
-
-  public abstract disconnect(params: { topic: string }): Promise<void>;
 
   // ---------- Protected Helpers --------------------------------------- //
 
@@ -156,8 +142,6 @@ export abstract class IAuthEngine {
 
   protected abstract setExpiry(topic: string, expiry: number): Promise<void>;
 
-  protected abstract cleanup(): Promise<void>;
-
   // ---------- Protected Relay Event Methods ----------------------------------- //
 
   protected abstract onRelayEventRequest(
@@ -179,19 +163,4 @@ export abstract class IAuthEngine {
     topic: string,
     payload: JsonRpcResult<JsonRpcTypes.Results["wc_authRequest"]> | JsonRpcError,
   ): void;
-
-  protected abstract onPairingPingRequest(
-    topic: string,
-    payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_pairingPing"]>,
-  ): Promise<void>;
-
-  protected abstract onPairingPingResponse(
-    topic: string,
-    payload: JsonRpcResult<JsonRpcTypes.Results["wc_pairingPing"]> | JsonRpcError,
-  ): void;
-
-  protected abstract onPairingDeleteRequest(
-    topic: string,
-    payload: JsonRpcRequest<JsonRpcTypes.RequestParams["wc_pairingDelete"]>,
-  ): Promise<void>;
 }

@@ -1,21 +1,13 @@
-import { ICore, IJsonRpcHistory, IStore, CoreTypes } from "@walletconnect/types";
+import { ICore, IStore, CoreTypes } from "@walletconnect/types";
 import EventEmitter from "events";
 import { Logger } from "pino";
-import { Expirer } from "../controllers/expirer";
-import { Pairing } from "../controllers/pairing";
 import { AuthEngineTypes } from "./engine";
 
 import { IAuthEngine } from "../types";
-import { ErrorResponse, JsonRpcError, JsonRpcResult } from "@walletconnect/jsonrpc-utils";
+import { JsonRpcError, JsonRpcResult } from "@walletconnect/jsonrpc-utils";
 
 export declare namespace AuthClientTypes {
-  // ---------- Data Types ----------------------------------------------- //
-
-  // TODO:
-
-  // ---------- Event Types ----------------------------------------------- //
-
-  type Event = "auth_request" | "auth_response" | "pairing_ping" | "pairing_delete";
+  type Event = "auth_request" | "auth_response";
 
   interface AuthRequestEventArgs {
     requester: AuthEngineTypes.PendingRequest["requester"];
@@ -27,8 +19,6 @@ export declare namespace AuthClientTypes {
     | JsonRpcResult<AuthEngineTypes.Cacao>
     | JsonRpcError;
 
-  type PairingPingEventArgs = { error?: ErrorResponse };
-
   interface BaseEventArgs<T = unknown> {
     id: number;
     topic: string;
@@ -38,8 +28,6 @@ export declare namespace AuthClientTypes {
   interface EventArguments {
     auth_request: BaseEventArgs<AuthRequestEventArgs>;
     auth_response: BaseEventArgs<AuthResponseEventArgs>;
-    pairing_ping: BaseEventArgs<PairingPingEventArgs>;
-    pairing_delete: BaseEventArgs<never>;
   }
 
   interface Options extends CoreTypes.Options {
@@ -77,24 +65,17 @@ export abstract class IAuthClient {
     { id: number } & (AuthEngineTypes.Cacao | AuthEngineTypes.PendingRequest)
   >;
 
-  public abstract pairing: Pairing;
-  public abstract expirer: Expirer;
   public abstract events: EventEmitter;
   public abstract logger: Logger;
   public abstract engine: IAuthEngine;
-  public abstract history: IJsonRpcHistory;
 
   constructor(public opts: AuthClientTypes.Options) {}
 
   // ---------- Public Methods ----------------------------------------------- //
 
-  public abstract pair: IAuthEngine["pair"];
   public abstract request: IAuthEngine["request"];
   public abstract respond: IAuthEngine["respond"];
   public abstract getPendingRequests: IAuthEngine["getPendingRequests"];
-  public abstract getPairings: IAuthEngine["getPairings"];
-  public abstract ping: IAuthEngine["ping"];
-  public abstract disconnect: IAuthEngine["disconnect"];
 
   // ---------- Event Handlers ----------------------------------------------- //
 

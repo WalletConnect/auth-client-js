@@ -8,15 +8,13 @@ import { EventEmitter } from "events";
 import pino from "pino";
 
 import { AuthClientTypes, IAuthClient } from "./types";
-import { JsonRpcHistory, AuthEngine } from "./controllers";
+import { AuthEngine } from "./controllers";
 import {
   AUTH_CLIENT_PROTOCOL,
   AUTH_CLIENT_STORAGE_PREFIX,
   AUTH_CLIENT_VERSION,
   AUTH_CLIENT_DEFAULT_NAME,
 } from "./constants";
-import { Pairing } from "./controllers/pairing";
-import { Expirer } from "./controllers/expirer";
 
 export class AuthClient extends IAuthClient {
   public readonly protocol = AUTH_CLIENT_PROTOCOL;
@@ -30,9 +28,6 @@ export class AuthClient extends IAuthClient {
   public logger: IAuthClient["logger"];
   public events: IAuthClient["events"] = new EventEmitter();
   public engine: IAuthClient["engine"];
-  public pairing: IAuthClient["pairing"];
-  public expirer: IAuthClient["expirer"];
-  public history: IAuthClient["history"];
   public authKeys: IAuthClient["authKeys"];
   public pairingTopics: IAuthClient["pairingTopics"];
   public requests: IAuthClient["requests"];
@@ -70,10 +65,7 @@ export class AuthClient extends IAuthClient {
       AUTH_CLIENT_STORAGE_PREFIX,
     );
     this.requests = new Store(this.core, this.logger, "requests", AUTH_CLIENT_STORAGE_PREFIX);
-    this.pairing = new Pairing(this.core, this.logger);
-    this.expirer = new Expirer(this.core, this.logger);
     this.engine = new AuthEngine(this);
-    this.history = new JsonRpcHistory(this.core, this.logger);
   }
 
   get context() {
@@ -104,16 +96,6 @@ export class AuthClient extends IAuthClient {
 
   // ---------- Engine ----------------------------------------------- //
 
-  // for responder to pair a pairing created by a proposer
-  public pair: IAuthClient["pair"] = async (params) => {
-    try {
-      return await this.engine.pair(params);
-    } catch (error: any) {
-      this.logger.error(error.message);
-      throw error;
-    }
-  };
-
   // request wallet authentication
   public request: IAuthClient["request"] = async (params) => {
     try {
@@ -143,45 +125,15 @@ export class AuthClient extends IAuthClient {
     }
   };
 
-  public getPairings: IAuthClient["getPairings"] = () => {
-    try {
-      return this.engine.getPairings();
-    } catch (error: any) {
-      this.logger.error(error.message);
-      throw error;
-    }
-  };
-
-  public ping: IAuthClient["ping"] = async (params) => {
-    try {
-      return await this.engine.ping(params);
-    } catch (error: any) {
-      this.logger.error(error.message);
-      throw error;
-    }
-  };
-
-  public disconnect: IAuthClient["disconnect"] = async (params) => {
-    try {
-      return await this.engine.disconnect(params);
-    } catch (error: any) {
-      this.logger.error(error.message);
-      throw error;
-    }
-  };
-
   // ---------- Private ----------------------------------------------- //
 
   private async initialize() {
     this.logger.trace(`Initialized`);
     try {
       await this.core.start();
-      await this.pairing.init();
       await this.authKeys.init();
       await this.requests.init();
       await this.pairingTopics.init();
-      await this.expirer.init();
-      await this.history.init();
       await this.engine.init();
       this.logger.info(`AuthClient Initialization Success`);
     } catch (error: any) {

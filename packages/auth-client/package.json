@@ -1,7 +1,7 @@
 {
   "name": "@walletconnect/auth-client",
   "description": "Auth Client for WalletConnect Protocol",
-  "version": "0.4.0",
+  "version": "0.4.0-a438eee",
   "author": "WalletConnect, Inc. <walletconnect.com>",
   "homepage": "https://github.com/walletconnect/walletconnect-monorepo/",
   "license": "Apache-2.0",
@@ -32,7 +32,7 @@
     "prepublishOnly": "npm run build"
   },
   "engines": {
-    "node": "16"
+    "node": ">=14 <17"
   },
   "dependencies": {
     "@ethersproject/bytes": "^5.7.0",
@@ -41,14 +41,14 @@
     "@ethersproject/providers": "^5.7.1",
     "@ethersproject/transactions": "^5.7.0",
     "@stablelib/random": "1.0.2",
-    "@walletconnect/core": "2.0.0-rc.2",
+    "@walletconnect/core": "2.0.0-3ab9f144.0",
     "@walletconnect/events": "1.0.0",
     "@walletconnect/heartbeat": "1.0.0",
     "@walletconnect/jsonrpc-provider": "1.0.5",
     "@walletconnect/jsonrpc-utils": "1.0.3",
     "@walletconnect/logger": "1.0.1",
     "@walletconnect/time": "1.0.1",
-    "@walletconnect/utils": "2.0.0-rc.2",
+    "@walletconnect/utils": "2.0.0-3ab9f144.0",
     "events": "^3.3.0",
     "pino": "6.7.0",
     "pino-pretty": "4.3.0"
@@ -57,8 +57,8 @@
     "@ethersproject/wallet": "^5.7.0",
     "@walletconnect/jsonrpc-ws-connection": "1.0.3",
     "@walletconnect/relay-api": "1.0.6",
-    "@walletconnect/types": "2.0.0-rc.2",
+    "@walletconnect/types": "2.0.0-3ab9f144.0",
     "aws-sdk": "^2.1169.0",
-    "better-sqlite3": "7.6.2"
+    "lokijs": "^1.5.12"
   }
 }

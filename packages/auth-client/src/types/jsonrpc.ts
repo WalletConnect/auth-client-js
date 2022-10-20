@@ -2,7 +2,7 @@ import { AuthClientTypes } from "./client";
 import { AuthEngineTypes } from "./engine";
 
 export declare namespace JsonRpcTypes {
-  export type WcMethod = "wc_authRequest" | "wc_pairingDelete" | "wc_pairingPing";
+  export type WcMethod = "wc_authRequest";
 
   // ---- JSON-RPC Requests -----------------------------
   export interface RequestParams {
@@ -13,17 +13,10 @@ export declare namespace JsonRpcTypes {
         metadata: AuthClientTypes.Metadata;
       };
     };
-    wc_pairingDelete: {
-      code: number;
-      message: string;
-    };
-    wc_pairingPing: Record<string, never>;
   }
 
   // ---- JSON-RPC Responses -----------------------------
   export interface Results {
     wc_authRequest: AuthEngineTypes.Cacao;
-    wc_pairingDelete: true;
-    wc_pairingPing: true;
   }
 }
