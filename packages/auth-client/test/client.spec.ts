@@ -274,8 +274,8 @@ describe("AuthClient", () => {
 
       await waitForEvent(() => receivedAuthRequest);
 
-      const clientPairings = client.getPairings();
-      const peerPairings = peer.getPairings();
+      const clientPairings = client.core.pairing.getPairings();
+      const peerPairings = peer.core.pairing.getPairings();
 
       expect(clientPairings.length).to.eql(1);
       expect(peerPairings.length).to.eql(1);
@@ -306,8 +306,8 @@ describe("AuthClient", () => {
       await waitForEvent(() => receivedAuthRequest);
 
       const topic = client.core.pairing.pairings.keys[0];
-      await client.ping({ topic });
-      await peer.ping({ topic });
+      await client.core.pairing.ping({ topic });
+      await peer.core.pairing.ping({ topic });
 
       await waitForEvent(() => receivedClientPing && receivedPeerPing);
 
@@ -340,7 +340,7 @@ describe("AuthClient", () => {
         peer.core.pairing.getPairings()[0].topic,
       );
 
-      await client.disconnect({ topic: client.core.pairing.getPairings()[0].topic });
+      await client.core.pairing.disconnect({ topic: client.core.pairing.getPairings()[0].topic });
 
       await waitForEvent(() => peerDeletedPairing);
 

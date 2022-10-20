@@ -125,12 +125,6 @@ export abstract class IAuthEngine {
 
   public abstract getPendingRequests(): Record<number, AuthEngineTypes.PendingRequest>;
 
-  public abstract getPairings(): PairingTypes.Struct[];
-
-  public abstract ping(params: { topic: string }): Promise<void>;
-
-  public abstract disconnect(params: { topic: string }): Promise<void>;
-
   // ---------- Protected Helpers --------------------------------------- //
 
   protected abstract sendRequest<M extends JsonRpcTypes.WcMethod>(

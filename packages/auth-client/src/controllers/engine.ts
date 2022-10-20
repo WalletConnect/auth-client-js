@@ -200,20 +200,6 @@ export class AuthEngine extends IAuthEngine {
     return pendingRequests;
   };
 
-  public getPairings: IAuthEngine["getPairings"] = () => {
-    return this.client.core.pairing.getPairings();
-  };
-
-  public ping: IAuthEngine["ping"] = async (params) => {
-    this.isInitialized();
-    await this.client.core.pairing.ping(params);
-  };
-
-  public disconnect: IAuthEngine["disconnect"] = async (params) => {
-    this.isInitialized();
-    await this.client.core.pairing.disconnect(params);
-  };
-
   // ---------- Private Helpers --------------------------------------- //
 
   protected setExpiry: IAuthEngine["setExpiry"] = async (topic, expiry) => {
@@ -415,9 +401,7 @@ export class AuthEngine extends IAuthEngine {
       await this.client.core.pairing.activate({ topic: pairingTopic });
 
       const { s: signature, p: payload } = response.result;
-
       await this.client.requests.set(id, { id, ...response.result });
-
       const reconstructed = this.constructEip4361Message(payload);
       console.log("reconstructed message:\n", JSON.stringify(reconstructed));
       console.log("payload.iss:", payload.iss);

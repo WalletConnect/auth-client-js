@@ -135,33 +135,6 @@ export class AuthClient extends IAuthClient {
     }
   };
 
-  public getPairings: IAuthClient["getPairings"] = () => {
-    try {
-      return this.engine.getPairings();
-    } catch (error: any) {
-      this.logger.error(error.message);
-      throw error;
-    }
-  };
-
-  public ping: IAuthClient["ping"] = async (params) => {
-    try {
-      return await this.engine.ping(params);
-    } catch (error: any) {
-      this.logger.error(error.message);
-      throw error;
-    }
-  };
-
-  public disconnect: IAuthClient["disconnect"] = async (params) => {
-    try {
-      return await this.engine.disconnect(params);
-    } catch (error: any) {
-      this.logger.error(error.message);
-      throw error;
-    }
-  };
-
   // ---------- Private ----------------------------------------------- //
 
   private async initialize() {
