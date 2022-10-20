@@ -43,7 +43,7 @@ export class AuthEngine extends IAuthEngine {
 
   // ---------- Public ------------------------------------------------ //
 
-  public request: IAuthEngine["request"] = async (params: AuthEngineTypes.PayloadParams) => {
+  public request: IAuthEngine["request"] = async (params, opts) => {
     this.isInitialized();
 
     if (!isValidRequest(params)) {
@@ -53,22 +53,37 @@ export class AuthEngine extends IAuthEngine {
     // SPEC: A will construct an authentication request.
     const { chainId, statement, aud, domain, nonce, type } = params;
 
-    const existingPairings = this.client.core.pairing.pairings.getAll({ active: true });
+    const hasKnownPairing =
+      Boolean(opts?.topic) &&
+      this.client.core.pairing.pairings
+        .getAll({ active: true })
+        .some((pairing) => pairing.topic === opts?.topic);
+
+    console.log(
+      "HAS KNOWN PAIRING: ",
+      hasKnownPairing,
+      opts?.topic,
+      this.client.core.pairing.pairings.getAll({ active: true }),
+    );
+
     const relay = { protocol: RELAYER_DEFAULT_PROTOCOL };
 
     const expiry = calcExpiry(FIVE_MINUTES);
 
     const publicKey = await this.client.core.crypto.generateKeyPair();
 
-    // SPEC: A creates random symKey S for pairing topic
-    if (existingPairings.filter((pairing) => pairing.active).length > 0) {
-      this.client.logger.debug("Found existing active pairing");
+    if (hasKnownPairing) {
+      const knownPairing = this.client.core.pairing.pairings
+        .getAll({ active: true })
+        .find((pairing) => pairing.topic === opts?.topic);
 
-      const pairing = existingPairings[existingPairings.length - 1];
-      const existingPairingTopic = pairing.topic;
+      if (!knownPairing)
+        throw new Error(`Could not find pairing for provided topic ${opts?.topic}`);
+
+      console.log(`Found known pairing for provided topic ${opts?.topic}: `, knownPairing);
 
       // Send request to existing pairing
-      await this.sendRequest(existingPairingTopic, "wc_authRequest", {
+      await this.sendRequest(knownPairing.topic, "wc_authRequest", {
         payloadParams: {
           type: type ?? "eip4361",
           chainId,
@@ -85,10 +100,8 @@ export class AuthEngine extends IAuthEngine {
       this.client.logger.debug("sent request to existing pairing");
     }
 
-    // SPEC: A generates keyPair X and generates response topic
     const symKey = generateRandomBytes32();
 
-    // SPEC: Pairing topic is the hash of symkey S
     const pairingTopic = await this.client.core.crypto.setSymKey(symKey);
 
     // Preparing pairing URI

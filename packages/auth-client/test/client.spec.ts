@@ -118,11 +118,12 @@ describe("AuthClient", () => {
     expect(peer.core.pairing.pairings.values[0].active).to.eql(true);
   });
 
-  it("Uses existing pairings", async () => {
-    let uri2 = "";
+  it("can use known pairings", async () => {
     let responseCount = 0;
 
     peer.on("auth_request", async (args) => {
+      console.log(">>>> AUTH REQUEST");
+
       const signature = await wallet.signMessage(args.params.message);
       await peer.respond({
         id: args.id,
@@ -135,17 +136,19 @@ describe("AuthClient", () => {
 
     client.on("auth_response", async () => {
       responseCount++;
-      const { uri } = await client.request(defaultRequestParams);
-      uri2 = uri;
     });
 
     const { uri: uri1 } = await client.request(defaultRequestParams);
 
     await peer.core.pairing.pair({ uri: uri1 });
 
-    await waitForEvent(() => !!uri2);
-    await waitForEvent(() => responseCount === 2);
+    await waitForEvent(() => responseCount === 1);
 
+    const knownPairing = client.core.pairing.getPairings()[0];
+
+    const { uri: uri2 } = await client.request(defaultRequestParams, { topic: knownPairing.topic });
+
+    await waitForEvent(() => responseCount === 2);
     expect(uri1).not.to.eql(uri2);
 
     // Ensure they paired

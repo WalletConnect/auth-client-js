@@ -27,7 +27,7 @@ export declare namespace AuthEngineTypes {
     domain: string;
     nonce: string;
     aud: string;
-    type?: string;
+    type?: CacaoHeader["t"];
     nbf?: string;
     exp?: string;
     statement?: string;
@@ -111,6 +111,7 @@ export abstract class IAuthEngine {
 
   public abstract request(
     params: AuthEngineTypes.RequestParams,
+    opts?: { topic?: string },
   ): Promise<{ uri: string; id: number }>;
 
   public abstract respond(params: AuthEngineTypes.RespondParams): Promise<void>;
