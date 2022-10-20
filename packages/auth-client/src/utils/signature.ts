@@ -35,7 +35,6 @@ export async function verifySignature(
 
 function isValidEip191Signature(address: string, message: string, signature: string): boolean {
   const recoveredAddress = recoverAddress(hashMessage(message), signature);
-  console.log("Recovered address from EIP-191 signature:", address);
   return recoveredAddress.toLowerCase() === address.toLowerCase();
 }
 
@@ -52,7 +51,6 @@ async function isValidEip1271Signature(
       arrayify(hashMessage(reconstructedMessage)),
       signature,
     );
-    console.log("Recovered magic value from EIP-1271 signature:", recoveredValue);
     return recoveredValue.toLowerCase() === magicValue.toLowerCase();
   } catch (e) {
     return false;

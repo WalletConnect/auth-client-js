@@ -62,7 +62,7 @@ export class AuthEngine extends IAuthEngine {
 
     // SPEC: A creates random symKey S for pairing topic
     if (existingPairings.filter((pairing) => pairing.active).length > 0) {
-      console.log("Found existing active pairing");
+      this.client.logger.debug("Found existing active pairing");
 
       const pairing = existingPairings[existingPairings.length - 1];
       const existingPairingTopic = pairing.topic;
@@ -82,7 +82,7 @@ export class AuthEngine extends IAuthEngine {
         requester: { publicKey, metadata: this.client.metadata },
       });
 
-      console.log("sent request to existing pairing");
+      this.client.logger.debug("sent request to existing pairing");
     }
 
     // SPEC: A generates keyPair X and generates response topic
@@ -95,7 +95,7 @@ export class AuthEngine extends IAuthEngine {
     const pairing = { topic: pairingTopic, expiry, relay, active: false };
     await this.client.core.pairing.pairings.set(pairingTopic, pairing);
 
-    console.log("Generated new pairing", pairing);
+    this.client.logger.debug("Generated new pairing", pairing);
 
     this.setExpiry(pairingTopic, expiry);
 
@@ -110,7 +110,7 @@ export class AuthEngine extends IAuthEngine {
     // Subscribe to auth_response topic
     await this.client.core.relayer.subscribe(responseTopic);
 
-    console.log("sending request to potential pairing");
+    this.client.logger.debug("sending request to potential pairing");
 
     // SPEC: A encrypts reuqest with symKey S
     // SPEC: A publishes encrypted request to topic
@@ -128,7 +128,7 @@ export class AuthEngine extends IAuthEngine {
       requester: { publicKey, metadata: this.client.metadata },
     });
 
-    console.log("sent request to potential pairing");
+    this.client.logger.debug("sent request to potential pairing");
 
     const uri = formatUri({
       protocol: this.client.protocol,
@@ -294,7 +294,7 @@ export class AuthEngine extends IAuthEngine {
 
   // ---------- Helpers ---------------------------------------------- //
   protected constructEip4361Message = (cacao: AuthEngineTypes.CacaoPayload) => {
-    console.log("constructEip4361Message, cacao is:", cacao);
+    this.client.logger.debug("constructEip4361Message, cacao is:", cacao);
 
     const header = `${cacao.domain} wants you to sign in with your Ethereum account:`;
     const walletAddress = getDidAddress(cacao.iss);
@@ -336,7 +336,7 @@ export class AuthEngine extends IAuthEngine {
       payloadParams: { resources, statement, aud, domain, version, nonce, iat },
     } = payload.params;
 
-    console.log("onAuthRequest:", topic, payload);
+    this.client.logger.debug("onAuthRequest:", topic, payload);
 
     try {
       const cacaoPayload: AuthEngineTypes.CacaoPayload = {
@@ -376,7 +376,7 @@ export class AuthEngine extends IAuthEngine {
   protected onAuthResponse: IAuthEngine["onAuthResponse"] = async (topic, response) => {
     const { id } = response;
 
-    console.log("onAuthResponse", topic, response);
+    this.client.logger.debug("onAuthResponse", topic, response);
 
     if (isJsonRpcResult(response)) {
       const { pairingTopic } = this.client.pairingTopics.get(topic);
@@ -385,9 +385,9 @@ export class AuthEngine extends IAuthEngine {
       const { s: signature, p: payload } = response.result;
       await this.client.requests.set(id, { id, ...response.result });
       const reconstructed = this.constructEip4361Message(payload);
-      console.log("reconstructed message:\n", JSON.stringify(reconstructed));
-      console.log("payload.iss:", payload.iss);
-      console.log("signature:", signature);
+      this.client.logger.debug("reconstructed message:\n", JSON.stringify(reconstructed));
+      this.client.logger.debug("payload.iss:", payload.iss);
+      this.client.logger.debug("signature:", signature);
 
       const walletAddress = getDidAddress(payload.iss);
       const chainId = getNamespacedDidChainId(payload.iss);
@@ -398,7 +398,7 @@ export class AuthEngine extends IAuthEngine {
       if (!chainId) {
         throw new Error("Could not derive chainId from `payload.iss`");
       }
-      console.log("walletAddress extracted from `payload.iss`:", walletAddress);
+      this.client.logger.debug("walletAddress extracted from `payload.iss`:", walletAddress);
 
       const isValid = await verifySignature(
         walletAddress,
