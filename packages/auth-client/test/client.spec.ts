@@ -120,6 +120,7 @@ describe("AuthClient", () => {
 
   it("Uses existing pairings", async () => {
     let uri2 = "";
+    let responseCount = 0;
 
     peer.on("auth_request", async (args) => {
       const signature = await wallet.signMessage(args.params.message);
@@ -133,6 +134,7 @@ describe("AuthClient", () => {
     });
 
     client.on("auth_response", async () => {
+      responseCount++;
       const { uri } = await client.request(defaultRequestParams);
       uri2 = uri;
     });
@@ -142,6 +144,7 @@ describe("AuthClient", () => {
     await peer.pair({ uri: uri1 });
 
     await waitForEvent(() => !!uri2);
+    await waitForEvent(() => responseCount === 2);
 
     expect(uri1).not.to.eql(uri2);
 
