@@ -4,16 +4,10 @@ import { Logger } from "pino";
 import { AuthEngineTypes } from "./engine";
 
 import { IAuthEngine } from "../types";
-import { ErrorResponse, JsonRpcError, JsonRpcResult } from "@walletconnect/jsonrpc-utils";
+import { JsonRpcError, JsonRpcResult } from "@walletconnect/jsonrpc-utils";
 
 export declare namespace AuthClientTypes {
-  // ---------- Data Types ----------------------------------------------- //
-
-  // TODO:
-
-  // ---------- Event Types ----------------------------------------------- //
-
-  type Event = "auth_request" | "auth_response" | "pairing_ping" | "pairing_delete";
+  type Event = "auth_request" | "auth_response";
 
   interface AuthRequestEventArgs {
     requester: AuthEngineTypes.PendingRequest["requester"];
@@ -25,8 +19,6 @@ export declare namespace AuthClientTypes {
     | JsonRpcResult<AuthEngineTypes.Cacao>
     | JsonRpcError;
 
-  type PairingPingEventArgs = { error?: ErrorResponse };
-
   interface BaseEventArgs<T = unknown> {
     id: number;
     topic: string;
@@ -36,8 +28,6 @@ export declare namespace AuthClientTypes {
   interface EventArguments {
     auth_request: BaseEventArgs<AuthRequestEventArgs>;
     auth_response: BaseEventArgs<AuthResponseEventArgs>;
-    pairing_ping: BaseEventArgs<PairingPingEventArgs>;
-    pairing_delete: BaseEventArgs<never>;
   }
 
   interface Options extends CoreTypes.Options {
