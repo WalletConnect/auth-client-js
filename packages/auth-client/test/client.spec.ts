@@ -147,7 +147,7 @@ describe("AuthClient", () => {
 
     // Ensure they paired
     expect(peer.core.pairing.pairings.keys.length).to.eql(1);
-    expect(peer.core.history.keys.length).to.eql(1);
+    expect(peer.core.history.keys.length).to.eql(2);
   });
 
   it("handles incoming auth requests", async () => {
