@@ -97,9 +97,9 @@ export class AuthClient extends IAuthClient {
   // ---------- Engine ----------------------------------------------- //
 
   // request wallet authentication
-  public request: IAuthClient["request"] = async (params) => {
+  public request: IAuthClient["request"] = async (params, opts) => {
     try {
-      return await this.engine.request(params);
+      return await this.engine.request(params, opts);
     } catch (error: any) {
       this.logger.error(error.message);
       throw error;
