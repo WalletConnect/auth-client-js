@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { AuthClient } from "../src/client";
 import { isValidRequest, isValidRespond } from "../src/utils/validators";
+import { disconnectSocket } from "./helpers/ws";
 
 const metadataRequester = {
   name: "client (requester)",
@@ -50,7 +51,7 @@ describe("Validation", () => {
       const client = await AuthClient.init({
         logger: "error",
         relayUrl: process.env.TEST_RELAY_URL || "wss://staging.relay.walletconnect.com",
-        projectId: process.env.TEST_PROJECT_ID,
+        projectId: process.env.TEST_PROJECT_ID!,
         storageOptions: {
           database: ":memory:",
         },
@@ -66,13 +67,14 @@ describe("Validation", () => {
 
       const isValid = isValidRespond({ id, signature: {} as any }, client.requests);
       expect(isValid).to.eql(true);
+      await disconnectSocket(client.core);
     });
 
     it("Validates bad case", async () => {
       const client = await AuthClient.init({
         logger: "error",
         relayUrl: process.env.TEST_RELAY_URL || "wss://staging.relay.walletconnect.com",
-        projectId: process.env.TEST_PROJECT_ID,
+        projectId: process.env.TEST_PROJECT_ID!,
         storageOptions: {
           database: ":memory:",
         },
@@ -81,6 +83,7 @@ describe("Validation", () => {
 
       const isValid = isValidRespond({ id: 2, signature: {} as any }, client.requests);
       expect(isValid).to.eql(false);
+      await disconnectSocket(client.core);
     });
   });
 });
