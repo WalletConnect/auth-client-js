@@ -103,7 +103,6 @@ export declare namespace AuthEngineTypes {
   type RespondParams = ResultResponse | ErrorResponse;
 }
 
-// TODO: define missing param and data types
 export abstract class IAuthEngine {
   constructor(public client: IAuthClient) {}
 
