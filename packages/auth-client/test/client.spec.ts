@@ -1,6 +1,7 @@
-import { expect, describe, it, beforeEach, beforeAll, vi } from "vitest";
+import { expect, describe, it, beforeEach, afterEach, beforeAll, vi } from "vitest";
 import { Wallet } from "@ethersproject/wallet";
 import { AuthClient, generateNonce, IAuthClient, AuthEngineTypes } from "../src";
+import { disconnectSocket } from "./helpers/ws";
 
 const metadataRequester = {
   name: "client (requester)",
@@ -84,6 +85,11 @@ describe("AuthClient", () => {
       iss: `did:pkh:eip155:1:${wallet.address}`,
       metadata: metadataResponder,
     });
+  });
+
+  afterEach(async () => {
+    await disconnectSocket(client.core);
+    await disconnectSocket(peer.core);
   });
 
   it("can be instantiated", () => {
