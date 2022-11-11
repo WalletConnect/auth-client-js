@@ -35,10 +35,7 @@
     "node": ">=14 <17"
   },
   "dependencies": {
-    "@ethersproject/bytes": "^5.7.0",
-    "@ethersproject/contracts": "^5.7.0",
     "@ethersproject/hash": "^5.7.0",
-    "@ethersproject/providers": "^5.7.1",
     "@ethersproject/transactions": "^5.7.0",
     "@stablelib/random": "1.0.2",
     "@walletconnect/core": "2.0.0",
@@ -50,6 +47,7 @@
     "@walletconnect/time": "1.0.1",
     "@walletconnect/utils": "2.0.0",
     "events": "^3.3.0",
+    "isomorphic-unfetch": "^3.1.0",
     "pino": "6.7.0",
     "pino-pretty": "4.3.0"
   },

@@ -1,8 +1,6 @@
-import { JsonRpcProvider, Provider } from "@ethersproject/providers";
 import { hashMessage } from "@ethersproject/hash";
 import { recoverAddress } from "@ethersproject/transactions";
-import { Contract } from "@ethersproject/contracts";
-import { arrayify } from "@ethersproject/bytes";
+import fetch from "isomorphic-unfetch";
 
 import { AuthEngineTypes } from "../types";
 import { DEFAULT_RPC_URL } from "../constants/defaults";
@@ -14,8 +12,7 @@ export async function verifySignature(
   chainId: string,
   projectId: string,
 ): Promise<boolean> {
-  // Determine if this address is an EOA or a contract.
-
+  // Determine if this signature is from an EOA or a contract.
   switch (cacaoSignature.t) {
     case "eip191":
       return isValidEip191Signature(address, reconstructedMessage, cacaoSignature.s);
@@ -24,7 +21,8 @@ export async function verifySignature(
         address,
         reconstructedMessage,
         cacaoSignature.s,
-        new JsonRpcProvider(`${DEFAULT_RPC_URL}/?chainId=${chainId}&projectId=${projectId}`),
+        chainId,
+        projectId,
       );
     default:
       throw new Error(
@@ -42,46 +40,45 @@ async function isValidEip1271Signature(
   address: string,
   reconstructedMessage: string,
   signature: string,
-  provider: Provider,
-  abi = eip1271.abi,
-  magicValue = eip1271.magicValue,
-): Promise<boolean> {
+  chainId: string,
+  projectId: string,
+) {
   try {
-    const recoveredValue = await new Contract(address, abi, provider).isValidSignature(
-      arrayify(hashMessage(reconstructedMessage)),
-      signature,
-    );
-    return recoveredValue.toLowerCase() === magicValue.toLowerCase();
-  } catch (e) {
+    const eip1271MagicValue = "0x1626ba7e";
+    const dynamicTypeOffset = "0000000000000000000000000000000000000000000000000000000000000040";
+    const dynamicTypeLength = "0000000000000000000000000000000000000000000000000000000000000041";
+    const nonPrefixedSignature = signature.substring(2);
+    const nonPrefixedHashedMessage = hashMessage(reconstructedMessage).substring(2);
+
+    const data =
+      eip1271MagicValue +
+      nonPrefixedHashedMessage +
+      dynamicTypeOffset +
+      dynamicTypeLength +
+      nonPrefixedSignature;
+
+    const response = await fetch(`${DEFAULT_RPC_URL}/?chainId=${chainId}&projectId=${projectId}`, {
+      method: "POST",
+      body: JSON.stringify({
+        id: generateJsonRpcId(),
+        jsonrpc: "2.0",
+        method: "eth_call",
+        params: [{ to: address, data }, "latest"],
+      }),
+    });
+    const { result } = await response.json();
+
+    if (!result) return false;
+
+    // Remove right-padded zeros from result to get only the concrete recovered value.
+    const recoveredValue = result.slice(0, eip1271MagicValue.length);
+    return recoveredValue.toLowerCase() === eip1271MagicValue.toLowerCase();
+  } catch (error: any) {
+    console.error("isValidEip1271Signature: ", error);
     return false;
   }
 }
 
-const eip1271 = {
-  magicValue: "0x1626ba7e",
-  abi: [
-    {
-      constant: true,
-      inputs: [
-        {
-          name: "_hash",
-          type: "bytes32",
-        },
-        {
-          name: "_sig",
-          type: "bytes",
-        },
-      ],
-      name: "isValidSignature",
-      outputs: [
-        {
-          name: "magicValue",
-          type: "bytes4",
-        },
-      ],
-      payable: false,
-      stateMutability: "view",
-      type: "function",
-    },
-  ],
-};
+function generateJsonRpcId() {
+  return Date.now() + Math.floor(Math.random() * 1000);
+}
