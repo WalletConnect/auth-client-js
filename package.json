@@ -28,6 +28,7 @@
     "prettier:write": "npm run prettier:write --workspaces",
     "build": "npm run clean --workspaces; npm run build --workspaces",
     "test": "npm run test --workspaces",
+    "test:canary": "npm run test:canary --workspaces",
     "test:watch": "npm run test:watch --workspaces",
     "npm-publish": "npm publish --access public --workspaces",
     "npm-publish:canary": "npm publish --access public --tag canary --workspaces"
