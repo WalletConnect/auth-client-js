@@ -2,6 +2,7 @@ import { expect, describe, it, beforeEach, afterEach, beforeAll } from "vitest";
 import { Wallet } from "@ethersproject/wallet";
 import { AuthClient, generateNonce, IAuthClient, AuthEngineTypes } from "./../../src";
 import { disconnectSocket } from "./../helpers/ws";
+import { uploadCanaryResultsToCloudWatch } from "../utils";
 
 const metadataRequester = {
   name: "client (requester)",
@@ -24,10 +25,16 @@ const defaultRequestParams: AuthEngineTypes.RequestParams = {
   nonce: generateNonce(),
 };
 
+const environment = process.env.ENVIRONMENT || "dev";
+const region = process.env.REGION || "unknown";
+const TEST_RELAY_URL = process.env.TEST_RELAY_URL || "wss://relay.walletconnect.com";
+const metricsPrefix = "HappyPath.auth";
+
 describe("AuthClient canary", () => {
   let client: IAuthClient;
   let peer: IAuthClient;
   let wallet: Wallet;
+  const start = Date.now();
 
   // Set up a wallet to use as the external signer.
   beforeAll(() => {
@@ -38,7 +45,7 @@ describe("AuthClient canary", () => {
     client = await AuthClient.init({
       name: "testClient",
       logger: "error",
-      relayUrl: process.env.TEST_RELAY_URL || "wss://relay.walletconnect.com",
+      relayUrl: TEST_RELAY_URL,
       projectId: process.env.TEST_PROJECT_ID!,
       storageOptions: {
         database: ":memory:",
@@ -49,7 +56,7 @@ describe("AuthClient canary", () => {
     peer = await AuthClient.init({
       name: "testPeer",
       logger: "error",
-      relayUrl: process.env.TEST_RELAY_URL || "wss://relay.walletconnect.com",
+      relayUrl: TEST_RELAY_URL,
       projectId: process.env.TEST_PROJECT_ID!,
       storageOptions: {
         database: ":memory:",
@@ -75,6 +82,8 @@ describe("AuthClient canary", () => {
   });
 
   it("Pairs", async () => {
+    const initializationLatencyMs = Date.now() - start;
+    const authStart = Date.now();
     let request = await client.request(defaultRequestParams);
 
     await Promise.all([
@@ -102,6 +111,8 @@ describe("AuthClient canary", () => {
         resolve();
       }),
     ]);
+
+    const authLatencyMs = Date.now() - authStart;
 
     // Ensure they paired
     expect(client.core.pairing.pairings.keys).to.eql(peer.core.pairing.pairings.keys);
@@ -171,12 +182,9 @@ describe("AuthClient canary", () => {
 
     expect(Object.values(requests)[0].cacaoPayload.aud).to.eql(aud);
 
+    const pingStart = Date.now();
+
     await Promise.all([
-      new Promise<void>((resolve) => {
-        peer.once("auth_request", () => {
-          resolve();
-        });
-      }),
       new Promise<void>((resolve) => {
         peer.core.pairing.events.once("pairing_ping", () => {
           resolve();
@@ -188,8 +196,6 @@ describe("AuthClient canary", () => {
         });
       }),
       new Promise<void>(async (resolve) => {
-        request = await client.request(defaultRequestParams);
-        await peer.core.pairing.pair({ uri: request.uri });
         const topic = client.core.pairing.pairings.keys[0];
         await client.core.pairing.ping({ topic });
         await peer.core.pairing.ping({ topic });
@@ -197,12 +203,15 @@ describe("AuthClient canary", () => {
       }),
     ]);
 
-    expect(client.core.pairing.pairings.keys.length).to.eql(4);
-    expect(peer.core.pairing.pairings.keys.length).to.eql(4);
+    const pingLatencyMs = Date.now() - pingStart;
+
+    expect(client.core.pairing.pairings.keys.length).to.eql(3);
+    expect(peer.core.pairing.pairings.keys.length).to.eql(3);
     expect(client.core.pairing.getPairings()[0].topic).to.eql(
       peer.core.pairing.getPairings()[0].topic,
     );
 
+    const deletePairingStart = Date.now();
     await Promise.all([
       new Promise<void>((resolve) => {
         peer.core.pairing.events.once("pairing_delete", () => {
@@ -214,8 +223,29 @@ describe("AuthClient canary", () => {
         resolve();
       }),
     ]);
+    const deletePairingMs = Date.now() - deletePairingStart;
 
-    expect(client.core.pairing.pairings.keys.length).to.eql(3);
-    expect(peer.core.pairing.pairings.keys.length).to.eql(3);
+    expect(client.core.pairing.pairings.keys.length).to.eql(2);
+    expect(peer.core.pairing.pairings.keys.length).to.eql(2);
+
+    const successful = true;
+    const latencyMs = Date.now() - start;
+
+    if (environment !== "dev") {
+      await uploadCanaryResultsToCloudWatch(
+        environment,
+        region,
+        TEST_RELAY_URL,
+        metricsPrefix,
+        successful,
+        latencyMs,
+        [
+          { initializationLatency: initializationLatencyMs },
+          { authLatency: authLatencyMs },
+          { pingLatency: pingLatencyMs },
+          { deletePairing: deletePairingMs },
+        ],
+      );
+    }
   });
 });
