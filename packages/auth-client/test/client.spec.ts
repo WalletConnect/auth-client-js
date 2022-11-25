@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { expect, describe, it, beforeEach, afterEach, beforeAll, vi } from "vitest";
 import { Wallet } from "@ethersproject/wallet";
 import { AuthClient, generateNonce, IAuthClient, AuthEngineTypes } from "../src";
@@ -61,6 +62,9 @@ describe("AuthClient", () => {
   beforeAll(() => {
     wallet = Wallet.createRandom();
   });
+
+  console.log("projectId: ", process.env.TEST_PROJECT_ID);
+  console.log("relayUrl: ", process.env.TEST_RELAY_URL);
 
   beforeEach(async () => {
     client = await AuthClient.init({
