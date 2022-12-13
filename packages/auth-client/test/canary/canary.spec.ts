@@ -34,6 +34,7 @@ describe("AuthClient canary", () => {
   let client: IAuthClient;
   let peer: IAuthClient;
   let wallet: Wallet;
+  let iss: string;
   const start = Date.now();
 
   // Set up a wallet to use as the external signer.
@@ -61,9 +62,10 @@ describe("AuthClient canary", () => {
       storageOptions: {
         database: ":memory:",
       },
-      iss: `did:pkh:eip155:1:${wallet.address}`,
       metadata: metadataResponder,
     });
+
+    iss = `did:pkh:eip155:1:${wallet.address}`;
   });
 
   afterEach(async () => {
@@ -89,14 +91,18 @@ describe("AuthClient canary", () => {
     await Promise.all([
       new Promise<void>((resolve) => {
         peer.once("auth_request", async (args) => {
-          const signature = await wallet.signMessage(args.params.message);
-          await peer.respond({
-            id: args.id,
-            signature: {
-              s: signature,
-              t: "eip191",
+          const message = peer.formatMessage(args.params.cacaoPayload, iss);
+          const signature = await wallet.signMessage(message);
+          await peer.respond(
+            {
+              id: args.id,
+              signature: {
+                s: signature,
+                t: "eip191",
+              },
             },
-          });
+            iss,
+          );
           resolve();
         });
       }),
@@ -130,13 +136,16 @@ describe("AuthClient canary", () => {
     await Promise.all([
       new Promise<void>((resolve) => {
         peer.once("auth_request", async (args) => {
-          await peer.respond({
-            id: args.id,
-            error: {
-              code: 14001,
-              message: "Can not login",
+          await peer.respond(
+            {
+              id: args.id,
+              error: {
+                code: 14001,
+                message: "Can not login",
+              },
             },
-          });
+            iss,
+          );
           resolve();
         });
       }),
