@@ -51,9 +51,6 @@ describe("AuthClient", () => {
   let wallet: Wallet;
   let iss: string;
 
-  console.log("projectId: ", process.env.TEST_PROJECT_ID);
-  console.log("test relay url: ", process.env.TEST_RELAY_URL);
-
   // Mocking five minutes to be five seconds to test expiry.
   // Modified constant instead of functions to be as close as possible to actual
   // expiry logic
