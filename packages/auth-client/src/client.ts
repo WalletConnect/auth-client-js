@@ -53,7 +53,6 @@ export class AuthClient extends IAuthClient {
 
     this.name = opts?.name || AUTH_CLIENT_DEFAULT_NAME;
     this.metadata = opts.metadata;
-    // this.address = opts.iss;
     this.projectId = opts.projectId;
     this.core = opts.core || new Core(opts);
     this.logger = generateChildLogger(logger, this.name);
