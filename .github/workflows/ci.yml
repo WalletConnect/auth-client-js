@@ -33,6 +33,9 @@ jobs:
       - name: Check node_modules cache
         id: cache-node-modules
         uses: actions/cache@v2
+        env:
+          TEST_RELAY_URL: ${{ secrets.TEST_RELAY_URL }}
+          TEST_PROJECT_ID: ${{ secrets.TEST_PROJECT_ID }}
         with:
           path: |
             node_modules
