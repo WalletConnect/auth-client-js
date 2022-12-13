@@ -362,8 +362,6 @@ export class AuthEngine extends IAuthEngine {
         resources,
       };
 
-      // const message = this.constructEip4361Message(cacaoPayload);
-
       await this.client.requests.set(payload.id, {
         requester,
         id: payload.id,
