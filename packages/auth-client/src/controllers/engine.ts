@@ -145,7 +145,7 @@ export class AuthEngine extends IAuthEngine {
     return { uri, id };
   };
 
-  public respond: IAuthEngine["respond"] = async (respondParams) => {
+  public respond: IAuthEngine["respond"] = async (respondParams, iss) => {
     this.isInitialized();
 
     if (!isValidRespond(respondParams, this.client.requests)) {
@@ -172,7 +172,10 @@ export class AuthEngine extends IAuthEngine {
       h: {
         t: "eip4361",
       },
-      p: pendingRequest.cacaoPayload,
+      p: {
+        ...pendingRequest.cacaoPayload,
+        iss,
+      },
       s: respondParams.signature,
     };
 
@@ -189,6 +192,13 @@ export class AuthEngine extends IAuthEngine {
   public getPendingRequests: IAuthEngine["getPendingRequests"] = () => {
     const pendingRequests = getPendingRequests(this.client.requests);
     return pendingRequests;
+  };
+
+  public formatMessage: IAuthEngine["formatMessage"] = (
+    payload: AuthEngineTypes.CacaoPayload,
+    iss: string,
+  ) => {
+    return this.constructEip4361Message(payload, iss);
   };
 
   // ---------- Private Helpers --------------------------------------- //
@@ -248,7 +258,6 @@ export class AuthEngine extends IAuthEngine {
       RELAYER_EVENTS.message,
       async (event: RelayerTypes.MessageEvent) => {
         const { topic, message } = event;
-
         const receiverPublicKey = this.client.authKeys.keys.includes(AUTH_CLIENT_PUBLIC_KEY_NAME)
           ? this.client.authKeys.get(AUTH_CLIENT_PUBLIC_KEY_NAME).publicKey
           : "";
@@ -297,15 +306,15 @@ export class AuthEngine extends IAuthEngine {
   };
 
   // ---------- Helpers ---------------------------------------------- //
-  protected constructEip4361Message = (cacao: AuthEngineTypes.CacaoPayload) => {
+  protected constructEip4361Message = (cacao: AuthEngineTypes.CacaoPayload, iss: string) => {
     this.client.logger.debug("constructEip4361Message, cacao is:", cacao);
 
     const header = `${cacao.domain} wants you to sign in with your Ethereum account:`;
-    const walletAddress = getDidAddress(cacao.iss);
+    const walletAddress = getDidAddress(iss);
     const statement = cacao.statement;
     const uri = `URI: ${cacao.aud}`;
     const version = `Version: ${cacao.version}`;
-    const chainId = `Chain ID: ${getDidChainId(cacao.iss)}`;
+    const chainId = `Chain ID: ${getDidChainId(iss)}`;
     const nonce = `Nonce: ${cacao.nonce}`;
     const issuedAt = `Issued At: ${cacao.iat}`;
     const resources =
@@ -343,8 +352,7 @@ export class AuthEngine extends IAuthEngine {
     this.client.logger.debug("onAuthRequest:", topic, payload);
 
     try {
-      const cacaoPayload: AuthEngineTypes.CacaoPayload = {
-        iss: this.client.address || "",
+      const cacaoPayload: AuthEngineTypes.CacaoRequestPayload = {
         aud,
         domain,
         version,
@@ -354,12 +362,11 @@ export class AuthEngine extends IAuthEngine {
         resources,
       };
 
-      const message = this.constructEip4361Message(cacaoPayload);
+      // const message = this.constructEip4361Message(cacaoPayload);
 
       await this.client.requests.set(payload.id, {
         requester,
         id: payload.id,
-        message,
         cacaoPayload,
       });
 
@@ -368,7 +375,7 @@ export class AuthEngine extends IAuthEngine {
         topic,
         params: {
           requester,
-          message: this.constructEip4361Message(cacaoPayload),
+          cacaoPayload,
         },
       });
     } catch (err: any) {
@@ -379,7 +386,6 @@ export class AuthEngine extends IAuthEngine {
 
   protected onAuthResponse: IAuthEngine["onAuthResponse"] = async (topic, response) => {
     const { id } = response;
-
     this.client.logger.debug("onAuthResponse", topic, response);
 
     if (isJsonRpcResult(response)) {
@@ -388,7 +394,7 @@ export class AuthEngine extends IAuthEngine {
 
       const { s: signature, p: payload } = response.result;
       await this.client.requests.set(id, { id, ...response.result });
-      const reconstructed = this.constructEip4361Message(payload);
+      const reconstructed = this.constructEip4361Message(payload, payload.iss);
       this.client.logger.debug("reconstructed message:\n", JSON.stringify(reconstructed));
       this.client.logger.debug("payload.iss:", payload.iss);
       this.client.logger.debug("signature:", signature);

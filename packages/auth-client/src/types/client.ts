@@ -11,7 +11,7 @@ export declare namespace AuthClientTypes {
 
   interface AuthRequestEventArgs {
     requester: AuthEngineTypes.PendingRequest["requester"];
-    message: string;
+    cacaoPayload: AuthEngineTypes.CacaoRequestPayload;
   }
 
   type AuthResponseEventArgs =
@@ -33,7 +33,6 @@ export declare namespace AuthClientTypes {
   interface Options extends CoreTypes.Options {
     metadata: Metadata;
     core?: ICore;
-    iss?: string;
     projectId: string;
   }
 
@@ -75,6 +74,7 @@ export abstract class IAuthClient {
 
   public abstract request: IAuthEngine["request"];
   public abstract respond: IAuthEngine["respond"];
+  public abstract formatMessage: IAuthEngine["formatMessage"];
   public abstract getPendingRequests: IAuthEngine["getPendingRequests"];
 
   // ---------- Event Handlers ----------------------------------------------- //
