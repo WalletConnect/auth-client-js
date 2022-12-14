@@ -23,7 +23,6 @@ export class AuthClient extends IAuthClient {
   public name: IAuthClient["name"] = AUTH_CLIENT_DEFAULT_NAME;
   public core: IAuthClient["core"];
   public metadata: IAuthClient["metadata"];
-  public address: IAuthClient["address"];
   public projectId: IAuthClient["projectId"];
   public logger: IAuthClient["logger"];
   public events: IAuthClient["events"] = new EventEmitter();
