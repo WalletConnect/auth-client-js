@@ -1,10 +1,10 @@
 import { ICore, IStore, CoreTypes } from "@walletconnect/types";
 import EventEmitter from "events";
-import { Logger } from "pino";
 import { AuthEngineTypes } from "./engine";
 
 import { IAuthEngine } from "../types";
 import { JsonRpcError, JsonRpcResult } from "@walletconnect/jsonrpc-utils";
+import { Logger } from "@walletconnect/logger";
 
 export declare namespace AuthClientTypes {
   type Event = "auth_request" | "auth_response";

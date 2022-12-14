@@ -3,9 +3,9 @@ import {
   generateChildLogger,
   getDefaultLoggerOptions,
   getLoggerContext,
+  pino,
 } from "@walletconnect/logger";
 import { EventEmitter } from "events";
-import pino from "pino";
 
 import { AuthClientTypes, IAuthClient } from "./types";
 import { AuthEngine } from "./controllers";
