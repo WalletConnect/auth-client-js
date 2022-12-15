@@ -194,11 +194,39 @@ export class AuthEngine extends IAuthEngine {
     return pendingRequests;
   };
 
-  public formatMessage: IAuthEngine["formatMessage"] = (
-    payload: AuthEngineTypes.CacaoPayload,
-    iss: string,
-  ) => {
-    return this.constructEip4361Message(payload, iss);
+  public formatMessage = (cacao: AuthEngineTypes.CacaoPayload, iss: string) => {
+    this.client.logger.debug("constructEip4361Message, cacao is:", cacao);
+
+    const header = `${cacao.domain} wants you to sign in with your Ethereum account:`;
+    const walletAddress = getDidAddress(iss);
+    const statement = cacao.statement;
+    const uri = `URI: ${cacao.aud}`;
+    const version = `Version: ${cacao.version}`;
+    const chainId = `Chain ID: ${getDidChainId(iss)}`;
+    const nonce = `Nonce: ${cacao.nonce}`;
+    const issuedAt = `Issued At: ${cacao.iat}`;
+    const resources =
+      cacao.resources && cacao.resources.length > 0
+        ? `Resources:\n${cacao.resources.map((resource) => `- ${resource}`).join("\n")}`
+        : undefined;
+
+    const message = [
+      header,
+      walletAddress,
+      ``,
+      statement,
+      ``,
+      uri,
+      version,
+      chainId,
+      nonce,
+      issuedAt,
+      resources,
+    ]
+      .filter((val) => val !== undefined && val !== null) // remove unnecessary empty lines
+      .join("\n");
+
+    return message;
   };
 
   // ---------- Private Helpers --------------------------------------- //
@@ -304,43 +332,6 @@ export class AuthEngine extends IAuthEngine {
         return this.client.logger.info(`Unsupported response method ${resMethod}`);
     }
   };
-
-  // ---------- Helpers ---------------------------------------------- //
-  protected constructEip4361Message = (cacao: AuthEngineTypes.CacaoPayload, iss: string) => {
-    this.client.logger.debug("constructEip4361Message, cacao is:", cacao);
-
-    const header = `${cacao.domain} wants you to sign in with your Ethereum account:`;
-    const walletAddress = getDidAddress(iss);
-    const statement = cacao.statement;
-    const uri = `URI: ${cacao.aud}`;
-    const version = `Version: ${cacao.version}`;
-    const chainId = `Chain ID: ${getDidChainId(iss)}`;
-    const nonce = `Nonce: ${cacao.nonce}`;
-    const issuedAt = `Issued At: ${cacao.iat}`;
-    const resources =
-      cacao.resources && cacao.resources.length > 0
-        ? `Resources:\n${cacao.resources.map((resource) => `- ${resource}`).join("\n")}`
-        : undefined;
-
-    const message = [
-      header,
-      walletAddress,
-      ``,
-      statement,
-      ``,
-      uri,
-      version,
-      chainId,
-      nonce,
-      issuedAt,
-      resources,
-    ]
-      .filter((val) => val !== undefined && val !== null) // remove unnecessary empty lines
-      .join("\n");
-
-    return message;
-  };
-
   // ---------- Relay Event Handlers --------------------------------- //
 
   protected onAuthRequest: IAuthEngine["onAuthRequest"] = async (topic, payload) => {
@@ -392,7 +383,7 @@ export class AuthEngine extends IAuthEngine {
 
       const { s: signature, p: payload } = response.result;
       await this.client.requests.set(id, { id, ...response.result });
-      const reconstructed = this.constructEip4361Message(payload, payload.iss);
+      const reconstructed = this.formatMessage(payload, payload.iss);
       this.client.logger.debug("reconstructed message:\n", JSON.stringify(reconstructed));
       this.client.logger.debug("payload.iss:", payload.iss);
       this.client.logger.debug("signature:", signature);
