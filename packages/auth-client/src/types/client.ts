@@ -1,17 +1,17 @@
 import { ICore, IStore, CoreTypes } from "@walletconnect/types";
 import EventEmitter from "events";
-import { Logger } from "pino";
 import { AuthEngineTypes } from "./engine";
 
 import { IAuthEngine } from "../types";
 import { JsonRpcError, JsonRpcResult } from "@walletconnect/jsonrpc-utils";
+import { Logger } from "@walletconnect/logger";
 
 export declare namespace AuthClientTypes {
   type Event = "auth_request" | "auth_response";
 
   interface AuthRequestEventArgs {
     requester: AuthEngineTypes.PendingRequest["requester"];
-    message: string;
+    cacaoPayload: AuthEngineTypes.CacaoRequestPayload;
   }
 
   type AuthResponseEventArgs =
@@ -33,7 +33,6 @@ export declare namespace AuthClientTypes {
   interface Options extends CoreTypes.Options {
     metadata: Metadata;
     core?: ICore;
-    iss?: string;
     projectId: string;
   }
 
@@ -56,7 +55,6 @@ export abstract class IAuthClient {
 
   public abstract core: ICore;
   public abstract metadata: AuthClientTypes.Metadata;
-  public abstract address?: string;
   public abstract projectId: string;
   public abstract authKeys: IStore<string, { publicKey: string }>;
   public abstract pairingTopics: IStore<string, any>;
@@ -75,6 +73,7 @@ export abstract class IAuthClient {
 
   public abstract request: IAuthEngine["request"];
   public abstract respond: IAuthEngine["respond"];
+  public abstract formatMessage: IAuthEngine["formatMessage"];
   public abstract getPendingRequests: IAuthEngine["getPendingRequests"];
 
   // ---------- Event Handlers ----------------------------------------------- //

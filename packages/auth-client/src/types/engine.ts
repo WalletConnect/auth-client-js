@@ -49,7 +49,6 @@ export declare namespace AuthEngineTypes {
     requestId?: string;
     resources?: string[];
   }
-
   interface CacaoPayload {
     iss: string;
     domain: string;
@@ -63,6 +62,8 @@ export declare namespace AuthEngineTypes {
     requestId?: string;
     resources?: string[];
   }
+
+  type CacaoRequestPayload = Omit<CacaoPayload, "iss">;
 
   interface CacaoHeader {
     t: "eip4361";
@@ -86,8 +87,7 @@ export declare namespace AuthEngineTypes {
       publicKey: string;
       metadata: AuthClientTypes.Metadata;
     };
-    cacaoPayload: CacaoPayload;
-    message: string;
+    cacaoPayload: CacaoRequestPayload;
   }
 
   interface ResultResponse {
@@ -113,9 +113,11 @@ export abstract class IAuthEngine {
     opts?: { topic?: string },
   ): Promise<{ uri: string; id: number }>;
 
-  public abstract respond(params: AuthEngineTypes.RespondParams): Promise<void>;
+  public abstract respond(params: AuthEngineTypes.RespondParams, iss: string): Promise<void>;
 
   public abstract getPendingRequests(): Record<number, AuthEngineTypes.PendingRequest>;
+
+  public abstract formatMessage(payload: AuthEngineTypes.CacaoRequestPayload, iss: string): string;
 
   // ---------- Protected Helpers --------------------------------------- //
 

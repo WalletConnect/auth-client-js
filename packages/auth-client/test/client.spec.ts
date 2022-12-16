@@ -49,6 +49,7 @@ describe("AuthClient", () => {
   let client: IAuthClient;
   let peer: IAuthClient;
   let wallet: Wallet;
+  let iss: string;
 
   // Mocking five minutes to be five seconds to test expiry.
   // Modified constant instead of functions to be as close as possible to actual
@@ -86,9 +87,10 @@ describe("AuthClient", () => {
       storageOptions: {
         database: ":memory:",
       },
-      iss: `did:pkh:eip155:1:${wallet.address}`,
       metadata: metadataResponder,
     });
+
+    iss = `did:pkh:eip155:1:${wallet.address}`;
   });
 
   afterEach(async () => {
@@ -132,14 +134,18 @@ describe("AuthClient", () => {
     let responseCount = 0;
 
     peer.on("auth_request", async (args) => {
-      const signature = await wallet.signMessage(args.params.message);
-      await peer.respond({
-        id: args.id,
-        signature: {
-          s: signature,
-          t: "eip191",
+      const message = peer.formatMessage(args.params.cacaoPayload, iss);
+      const signature = await wallet.signMessage(message);
+      await peer.respond(
+        {
+          id: args.id,
+          signature: {
+            s: signature,
+            t: "eip191",
+          },
         },
-      });
+        iss,
+      );
     });
 
     client.on("auth_response", async () => {
@@ -184,13 +190,16 @@ describe("AuthClient", () => {
     let hasResponded = false;
     let errorResponse = false;
     peer.once("auth_request", async (args) => {
-      await peer.respond({
-        id: args.id,
-        error: {
-          code: 14001,
-          message: "Can not login",
+      await peer.respond(
+        {
+          id: args.id,
+          error: {
+            code: 14001,
+            message: "Can not login",
+          },
         },
-      });
+        iss,
+      );
     });
 
     client.once("auth_response", ({ params }) => {
@@ -219,14 +228,18 @@ describe("AuthClient", () => {
     let hasResponded = false;
     let successfulResponse = false;
     peer.once("auth_request", async (args) => {
-      const signature = await wallet.signMessage(args.params.message);
-      await peer.respond({
-        id: args.id,
-        signature: {
-          s: signature,
-          t: "eip191",
+      const message = peer.formatMessage(args.params.cacaoPayload, iss);
+      const signature = await wallet.signMessage(message);
+      await peer.respond(
+        {
+          id: args.id,
+          signature: {
+            s: signature,
+            t: "eip191",
+          },
         },
-      });
+        iss,
+      );
     });
 
     client.once("auth_response", ({ params }) => {
@@ -378,14 +391,18 @@ describe("AuthClient", () => {
     let hasResponded = false;
     peer.once("auth_request", async (args) => {
       receivedMetadataName = args.params.requester?.metadata?.name;
-      const signature = await wallet.signMessage(args.params.message);
-      await peer.respond({
-        id: args.id,
-        signature: {
-          s: signature,
-          t: "eip191",
+      const message = peer.formatMessage(args.params.cacaoPayload, iss);
+      const signature = await wallet.signMessage(message);
+      await peer.respond(
+        {
+          id: args.id,
+          signature: {
+            s: signature,
+            t: "eip191",
+          },
         },
-      });
+        iss,
+      );
       hasResponded = true;
     });
 
@@ -408,14 +425,18 @@ describe("AuthClient", () => {
   it.skip("expires pairings", async () => {
     let peerHasResponded = false;
     peer.once("auth_request", async (args) => {
-      const signature = await wallet.signMessage(args.params.message);
-      await peer.respond({
-        id: args.id,
-        signature: {
-          s: signature,
-          t: "eip191",
+      const message = peer.formatMessage(args.params.cacaoPayload, iss);
+      const signature = await wallet.signMessage(message);
+      await peer.respond(
+        {
+          id: args.id,
+          signature: {
+            s: signature,
+            t: "eip191",
+          },
         },
-      });
+        iss,
+      );
       peerHasResponded = true;
     });
 

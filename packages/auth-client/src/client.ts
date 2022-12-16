@@ -3,9 +3,9 @@ import {
   generateChildLogger,
   getDefaultLoggerOptions,
   getLoggerContext,
+  pino,
 } from "@walletconnect/logger";
 import { EventEmitter } from "events";
-import pino from "pino";
 
 import { AuthClientTypes, IAuthClient } from "./types";
 import { AuthEngine } from "./controllers";
@@ -23,7 +23,6 @@ export class AuthClient extends IAuthClient {
   public name: IAuthClient["name"] = AUTH_CLIENT_DEFAULT_NAME;
   public core: IAuthClient["core"];
   public metadata: IAuthClient["metadata"];
-  public address: IAuthClient["address"];
   public projectId: IAuthClient["projectId"];
   public logger: IAuthClient["logger"];
   public events: IAuthClient["events"] = new EventEmitter();
@@ -53,7 +52,6 @@ export class AuthClient extends IAuthClient {
 
     this.name = opts?.name || AUTH_CLIENT_DEFAULT_NAME;
     this.metadata = opts.metadata;
-    this.address = opts.iss;
     this.projectId = opts.projectId;
     this.core = opts.core || new Core(opts);
     this.logger = generateChildLogger(logger, this.name);
@@ -107,9 +105,9 @@ export class AuthClient extends IAuthClient {
   };
 
   // respond wallet authentication
-  public respond: IAuthClient["respond"] = async (params) => {
+  public respond: IAuthClient["respond"] = async (params, iss) => {
     try {
-      return await this.engine.respond(params);
+      return await this.engine.respond(params, iss);
     } catch (error: any) {
       this.logger.error(error.message);
       throw error;
@@ -119,6 +117,15 @@ export class AuthClient extends IAuthClient {
   public getPendingRequests: IAuthClient["getPendingRequests"] = () => {
     try {
       return this.engine.getPendingRequests();
+    } catch (error: any) {
+      this.logger.error(error.message);
+      throw error;
+    }
+  };
+
+  public formatMessage: IAuthClient["formatMessage"] = (payload, iss) => {
+    try {
+      return this.engine.formatMessage(payload, iss);
     } catch (error: any) {
       this.logger.error(error.message);
       throw error;
