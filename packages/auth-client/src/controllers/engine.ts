@@ -195,7 +195,7 @@ export class AuthEngine extends IAuthEngine {
   };
 
   public formatMessage = (cacao: AuthEngineTypes.CacaoPayload, iss: string) => {
-    this.client.logger.debug("constructEip4361Message, cacao is:", cacao);
+    this.client.logger.debug("formatMessage, cacao is:", cacao);
 
     const header = `${cacao.domain} wants you to sign in with your Ethereum account:`;
     const walletAddress = getDidAddress(iss);
