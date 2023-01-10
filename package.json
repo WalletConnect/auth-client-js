@@ -1,7 +1,7 @@
 {
   "name": "@walletconnect/auth-client",
   "description": "WalletConnect Auth Client",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "private": true,
   "keywords": [
     "wallet",
@@ -34,7 +34,7 @@
     "npm-publish:canary": "npm publish --access public --tag canary --workspaces"
   },
   "engines": {
-    "node": ">=14 <17"
+    "node": ">=14"
   },
   "repository": {
     "type": "git",
