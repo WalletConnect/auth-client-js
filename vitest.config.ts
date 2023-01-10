@@ -4,7 +4,7 @@ import { defineConfig } from "vitest/config";
 const versionRegex = new RegExp(`^${16}\\..*`);
 const versionCorrect = process.versions.node.match(versionRegex);
 if (!versionCorrect) {
-  throw Error(`Running on wrong Nodejs version. Please upgrade the node runtime to version ${16}`);
+  throw Error(`Running on wrong Nodejs version. Please use node version 16.x`);
 }
 
 export default defineConfig({
