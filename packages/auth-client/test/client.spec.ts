@@ -3,6 +3,8 @@ import { expect, describe, it, beforeEach, afterEach, beforeAll, vi } from "vite
 import { Wallet } from "@ethersproject/wallet";
 import { AuthClient, generateNonce, IAuthClient, AuthEngineTypes } from "../src";
 import { disconnectSocket } from "./helpers/ws";
+import { RELAYER_EVENTS } from "@walletconnect/core";
+import { RelayerTypes } from "@walletconnect/types";
 
 const metadataRequester = {
   name: "client (requester)",
@@ -50,14 +52,6 @@ describe("AuthClient", () => {
   let peer: IAuthClient;
   let wallet: Wallet;
   let iss: string;
-
-  // Mocking five minutes to be five seconds to test expiry.
-  // Modified constant instead of functions to be as close as possible to actual
-  // expiry logic
-  vi.mock("@walletconnect/time", async () => {
-    const constants: Record<string, any> = await vi.importActual("@walletconnect/time");
-    return { ...constants, FIVE_MINUTES: 5, FOUR_WEEKS: 5 };
-  });
 
   // Set up a wallet to use as the external signer.
   beforeAll(() => {
@@ -262,6 +256,50 @@ describe("AuthClient", () => {
 
     expect(hasResponded).to.eql(true);
     expect(successfulResponse).to.eql(true);
+  });
+
+  it("should set custom request expiry", async () => {
+    const expiry = 1000;
+    let uri = "";
+    await Promise.all([
+      new Promise<void>((resolve) => {
+        client.core.relayer.once(RELAYER_EVENTS.publish, (payload: RelayerTypes.PublishPayload) => {
+          // ttl of the request should match the expiry
+          expect(payload?.opts?.ttl).to.eq(expiry);
+          resolve();
+        });
+      }),
+      new Promise<void>(async (resolve) => {
+        const response = await client.request({
+          ...defaultRequestParams,
+          expiry,
+        });
+        uri = response.uri;
+        resolve();
+      }),
+    ]);
+
+    await Promise.all([
+      new Promise<void>((resolve) => {
+        peer.once("auth_request", async (args) => {
+          const message = peer.formatMessage(args.params.cacaoPayload, iss);
+          const signature = await wallet.signMessage(message);
+          resolve(
+            await peer.respond(
+              {
+                id: args.id,
+                signature: {
+                  s: signature,
+                  t: "eip191",
+                },
+              },
+              iss,
+            ),
+          );
+        });
+      }),
+      peer.core.pairing.pair({ uri }),
+    ]);
   });
 
   describe("getPendingRequests", () => {
