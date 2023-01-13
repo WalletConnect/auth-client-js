@@ -1,4 +1,4 @@
-import { ONE_DAY } from "@walletconnect/time";
+import { ONE_DAY, FIVE_MINUTES, SEVEN_DAYS } from "@walletconnect/time";
 import { JsonRpcTypes, RpcOpts } from "../types";
 
 export const ENGINE_RPC_OPTS: Record<JsonRpcTypes.WcMethod, RpcOpts> = {
@@ -14,4 +14,9 @@ export const ENGINE_RPC_OPTS: Record<JsonRpcTypes.WcMethod, RpcOpts> = {
       tag: 3001,
     },
   },
+};
+
+export const AUTH_REQUEST_EXPIRY_BOUNDARIES = {
+  min: FIVE_MINUTES,
+  max: SEVEN_DAYS,
 };

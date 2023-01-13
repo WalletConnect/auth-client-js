@@ -61,8 +61,7 @@ export class AuthEngine extends IAuthEngine {
 
     const relay = { protocol: RELAYER_DEFAULT_PROTOCOL };
 
-    const expiry = calcExpiry(FIVE_MINUTES);
-
+    const expiry = calcExpiry(params.expiry || FIVE_MINUTES);
     const publicKey = await this.client.core.crypto.generateKeyPair();
 
     if (hasKnownPairing) {
@@ -74,19 +73,25 @@ export class AuthEngine extends IAuthEngine {
         throw new Error(`Could not find pairing for provided topic ${opts?.topic}`);
 
       // Send request to existing pairing
-      await this.sendRequest(knownPairing.topic, "wc_authRequest", {
-        payloadParams: {
-          type: type ?? "eip4361",
-          chainId,
-          statement,
-          aud,
-          domain,
-          version: "1",
-          nonce,
-          iat: new Date().toISOString(),
+      await this.sendRequest(
+        knownPairing.topic,
+        "wc_authRequest",
+        {
+          payloadParams: {
+            type: type ?? "eip4361",
+            chainId,
+            statement,
+            aud,
+            domain,
+            version: "1",
+            nonce,
+            iat: new Date().toISOString(),
+          },
+          requester: { publicKey, metadata: this.client.metadata },
         },
-        requester: { publicKey, metadata: this.client.metadata },
-      });
+        {},
+        params.expiry,
+      );
 
       this.client.logger.debug("sent request to existing pairing");
     }
@@ -118,19 +123,25 @@ export class AuthEngine extends IAuthEngine {
 
     // SPEC: A encrypts reuqest with symKey S
     // SPEC: A publishes encrypted request to topic
-    const id = await this.sendRequest(pairingTopic, "wc_authRequest", {
-      payloadParams: {
-        type: type ?? "eip4361",
-        chainId,
-        statement,
-        aud,
-        domain,
-        version: "1",
-        nonce,
-        iat: new Date().toISOString(),
+    const id = await this.sendRequest(
+      pairingTopic,
+      "wc_authRequest",
+      {
+        payloadParams: {
+          type: type ?? "eip4361",
+          chainId,
+          statement,
+          aud,
+          domain,
+          version: "1",
+          nonce,
+          iat: new Date().toISOString(),
+        },
+        requester: { publicKey, metadata: this.client.metadata },
       },
-      requester: { publicKey, metadata: this.client.metadata },
-    });
+      {},
+      params.expiry,
+    );
 
     this.client.logger.debug("sent request to potential pairing");
 
@@ -238,10 +249,17 @@ export class AuthEngine extends IAuthEngine {
     this.client.core.expirer.set(topic, expiry);
   };
 
-  protected sendRequest: IAuthEngine["sendRequest"] = async (topic, method, params, encodeOpts) => {
+  protected sendRequest: IAuthEngine["sendRequest"] = async (
+    topic,
+    method,
+    params,
+    encodeOpts,
+    expiry,
+  ) => {
     const payload = formatJsonRpcRequest(method, params);
     const message = await this.client.core.crypto.encode(topic, payload, encodeOpts);
     const rpcOpts = ENGINE_RPC_OPTS[method].req;
+    if (expiry) rpcOpts.ttl = expiry;
     this.client.core.history.set(topic, payload);
     await this.client.core.relayer.publish(topic, message, rpcOpts);
 
