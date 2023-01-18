@@ -33,6 +33,7 @@ export declare namespace AuthEngineTypes {
     statement?: string;
     requestId?: string;
     resources?: string[];
+    expiry?: number;
   }
 
   interface PayloadParams {
@@ -126,6 +127,7 @@ export abstract class IAuthEngine {
     method: M,
     params: JsonRpcTypes.RequestParams[M],
     encodeOpts?: CryptoTypes.EncodeOptions,
+    expiry?: number,
   ): Promise<number>;
 
   protected abstract sendResult<M extends JsonRpcTypes.WcMethod>(
