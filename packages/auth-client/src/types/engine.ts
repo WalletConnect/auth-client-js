@@ -112,7 +112,7 @@ export abstract class IAuthEngine {
   public abstract request(
     params: AuthEngineTypes.RequestParams,
     opts?: { topic?: string },
-  ): Promise<{ uri: string; id: number }>;
+  ): Promise<{ uri?: string; id: number }>;
 
   public abstract respond(params: AuthEngineTypes.RespondParams, iss: string): Promise<void>;
 

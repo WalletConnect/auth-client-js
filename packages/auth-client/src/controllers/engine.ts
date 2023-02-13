@@ -53,18 +53,12 @@ export class AuthEngine extends IAuthEngine {
     // SPEC: A will construct an authentication request.
     const { chainId, statement, aud, domain, nonce, type } = params;
 
-    const hasKnownPairing =
-      Boolean(opts?.topic) &&
-      this.client.core.pairing.pairings
-        .getAll({ active: true })
-        .some((pairing) => pairing.topic === opts?.topic);
-
     const relay = { protocol: RELAYER_DEFAULT_PROTOCOL };
 
     const expiry = calcExpiry(params.expiry || FIVE_MINUTES);
     const publicKey = await this.client.core.crypto.generateKeyPair();
 
-    if (hasKnownPairing) {
+    if (opts?.topic) {
       const knownPairing = this.client.core.pairing.pairings
         .getAll({ active: true })
         .find((pairing) => pairing.topic === opts?.topic);
@@ -73,7 +67,7 @@ export class AuthEngine extends IAuthEngine {
         throw new Error(`Could not find pairing for provided topic ${opts?.topic}`);
 
       // Send request to existing pairing
-      await this.sendRequest(
+      const id = await this.sendRequest(
         knownPairing.topic,
         "wc_authRequest",
         {
@@ -94,6 +88,7 @@ export class AuthEngine extends IAuthEngine {
       );
 
       this.client.logger.debug("sent request to existing pairing");
+      return { id };
     }
 
     const symKey = generateRandomBytes32();
