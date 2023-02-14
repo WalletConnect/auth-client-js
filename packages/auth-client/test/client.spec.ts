@@ -64,7 +64,7 @@ describe("AuthClient", () => {
   beforeEach(async () => {
     client = await AuthClient.init({
       name: "testClient",
-      logger: "info",
+      logger: "error",
       relayUrl: process.env.TEST_RELAY_URL || "wss://staging.relay.walletconnect.com",
       projectId: process.env.TEST_PROJECT_ID!,
       storageOptions: {
@@ -75,7 +75,7 @@ describe("AuthClient", () => {
 
     peer = await AuthClient.init({
       name: "testPeer",
-      logger: "info",
+      logger: "error",
       relayUrl: process.env.TEST_RELAY_URL || "wss://staging.relay.walletconnect.com",
       projectId: process.env.TEST_PROJECT_ID!,
       storageOptions: {
