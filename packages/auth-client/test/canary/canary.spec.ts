@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { expect, describe, it, beforeEach, afterEach, beforeAll } from "vitest";
 import { Wallet } from "@ethersproject/wallet";
 import { AuthClient, generateNonce, IAuthClient, AuthEngineTypes } from "./../../src";
@@ -182,8 +183,6 @@ describe("AuthClient canary", () => {
         resolve();
       }),
     ]);
-
-    await peer.core.pairing.pair({ uri: request.uri! });
 
     const requests = peer.getPendingRequests();
 

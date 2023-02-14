@@ -1,4 +1,5 @@
 /* eslint-disable no-console */
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { expect, describe, it, beforeEach, afterEach, beforeAll } from "vitest";
 import { Wallet } from "@ethersproject/wallet";
 import { AuthClient, generateNonce, IAuthClient, AuthEngineTypes, AuthClientTypes } from "../src";
