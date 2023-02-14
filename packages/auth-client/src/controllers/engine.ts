@@ -43,7 +43,7 @@ export class AuthEngine extends IAuthEngine {
     }
 
     if (opts?.topic) {
-      return this.requestOnKnownPairing(opts.topic, params);
+      return await this.requestOnKnownPairing(opts.topic, params);
     }
 
     // SPEC: A will construct an authentication request.
