@@ -1,4 +1,4 @@
-import { RELAYER_EVENTS, RELAYER_DEFAULT_PROTOCOL } from "@walletconnect/core";
+import { RELAYER_EVENTS } from "@walletconnect/core";
 import {
   formatJsonRpcRequest,
   formatJsonRpcResult,
@@ -8,16 +8,8 @@ import {
   isJsonRpcResult,
   isJsonRpcError,
 } from "@walletconnect/jsonrpc-utils";
-import { FIVE_MINUTES } from "@walletconnect/time";
 import { RelayerTypes } from "@walletconnect/types";
-import {
-  calcExpiry,
-  generateRandomBytes32,
-  getInternalError,
-  hashKey,
-  TYPE_1,
-  formatUri,
-} from "@walletconnect/utils";
+import { getInternalError, hashKey, TYPE_1 } from "@walletconnect/utils";
 import { JsonRpcTypes, IAuthEngine, AuthEngineTypes } from "../types";
 import { AUTH_CLIENT_PUBLIC_KEY_NAME, ENGINE_RPC_OPTS } from "../constants";
 import { getDidAddress, getDidChainId, getNamespacedDidChainId } from "../utils/address";
@@ -57,30 +49,19 @@ export class AuthEngine extends IAuthEngine {
     // SPEC: A will construct an authentication request.
     const { chainId, statement, aud, domain, nonce, type } = params;
 
-    const relay = { protocol: RELAYER_DEFAULT_PROTOCOL };
-    const expiry = calcExpiry(params.expiry || FIVE_MINUTES);
+    const { topic: pairingTopic, uri } = await this.client.core.pairing.create();
+
+    this.client.logger.info({
+      message: "Generated new pairing",
+      pairing: { topic: pairingTopic, uri },
+    });
+
     const publicKey = await this.client.core.crypto.generateKeyPair();
-
-    const symKey = generateRandomBytes32();
-
-    const pairingTopic = await this.client.core.crypto.setSymKey(symKey);
-
-    // Preparing pairing URI
-    const pairing = { topic: pairingTopic, expiry, relay, active: false };
-    await this.client.core.pairing.pairings.set(pairingTopic, pairing);
-
-    this.client.logger.info({ message: "Generated new pairing", pairing });
-
-    this.setExpiry(pairingTopic, expiry);
-
-    this.client.authKeys.set(AUTH_CLIENT_PUBLIC_KEY_NAME, { publicKey });
-
     const responseTopic = hashKey(publicKey);
 
+    this.client.authKeys.set(AUTH_CLIENT_PUBLIC_KEY_NAME, { publicKey });
     await this.client.pairingTopics.set(responseTopic, { pairingTopic });
 
-    // Subscribe to the pairing topic (for pings)
-    await this.client.core.relayer.subscribe(pairingTopic);
     // Subscribe to auth_response topic
     await this.client.core.relayer.subscribe(responseTopic);
 
@@ -109,14 +90,6 @@ export class AuthEngine extends IAuthEngine {
     );
 
     this.client.logger.info(`sent request to new pairing topic: ${pairingTopic}`);
-
-    const uri = formatUri({
-      protocol: this.client.protocol,
-      version: this.client.core.version,
-      topic: pairingTopic,
-      symKey,
-      relay,
-    });
 
     return { uri, id };
   };
