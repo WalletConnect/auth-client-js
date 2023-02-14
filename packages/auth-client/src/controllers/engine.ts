@@ -60,7 +60,7 @@ export class AuthEngine extends IAuthEngine {
     const responseTopic = hashKey(publicKey);
 
     this.client.authKeys.set(AUTH_CLIENT_PUBLIC_KEY_NAME, { publicKey });
-    await this.client.pairingTopics.set(responseTopic, { pairingTopic });
+    await this.client.pairingTopics.set(responseTopic, { topic: responseTopic, pairingTopic });
 
     // Subscribe to auth_response topic
     await this.client.core.relayer.subscribe(responseTopic);
