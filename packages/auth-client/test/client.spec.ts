@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
-import { expect, describe, it, beforeEach, afterEach, beforeAll, vi } from "vitest";
+import { expect, describe, it, beforeEach, afterEach, beforeAll } from "vitest";
 import { Wallet } from "@ethersproject/wallet";
-import { AuthClient, generateNonce, IAuthClient, AuthEngineTypes } from "../src";
+import { AuthClient, generateNonce, IAuthClient, AuthEngineTypes, AuthClientTypes } from "../src";
 import { disconnectSocket } from "./helpers/ws";
 import { RELAYER_EVENTS } from "@walletconnect/core";
 import { RelayerTypes } from "@walletconnect/types";
@@ -64,7 +64,7 @@ describe("AuthClient", () => {
   beforeEach(async () => {
     client = await AuthClient.init({
       name: "testClient",
-      logger: "error",
+      logger: "info",
       relayUrl: process.env.TEST_RELAY_URL || "wss://staging.relay.walletconnect.com",
       projectId: process.env.TEST_PROJECT_ID!,
       storageOptions: {
@@ -75,7 +75,7 @@ describe("AuthClient", () => {
 
     peer = await AuthClient.init({
       name: "testPeer",
-      logger: "error",
+      logger: "info",
       relayUrl: process.env.TEST_RELAY_URL || "wss://staging.relay.walletconnect.com",
       projectId: process.env.TEST_PROJECT_ID!,
       storageOptions: {
@@ -109,7 +109,7 @@ describe("AuthClient", () => {
     });
     const { uri } = await client.request(defaultRequestParams);
 
-    await peer.core.pairing.pair({ uri, activatePairing: true });
+    await peer.core.pairing.pair({ uri: uri!, activatePairing: true });
     await waitForEvent(() => hasRequest);
 
     // Ensure they paired
@@ -125,7 +125,7 @@ describe("AuthClient", () => {
   });
 
   it("can use known pairings", async () => {
-    let responseCount = 0;
+    const responses: AuthClientTypes.BaseEventArgs<AuthClientTypes.AuthResponseEventArgs>[] = [];
 
     peer.on("auth_request", async (args) => {
       const message = peer.formatMessage(args.params.cacaoPayload, iss);
@@ -142,26 +142,30 @@ describe("AuthClient", () => {
       );
     });
 
-    client.on("auth_response", async () => {
-      responseCount++;
+    client.on("auth_response", (args) => {
+      responses.push(args);
     });
 
     const { uri: uri1 } = await client.request(defaultRequestParams);
 
-    await peer.core.pairing.pair({ uri: uri1 });
+    await peer.core.pairing.pair({ uri: uri1! });
 
-    await waitForEvent(() => responseCount === 1);
+    await waitForEvent(() => responses.length === 1);
 
     const knownPairing = client.core.pairing.getPairings()[0];
 
     const { uri: uri2 } = await client.request(defaultRequestParams, { topic: knownPairing.topic });
 
-    await waitForEvent(() => responseCount === 2);
-    expect(uri1).not.to.eql(uri2);
+    await waitForEvent(() => responses.length === 2);
 
-    // Ensure they paired
+    expect(uri2).toBeUndefined();
+
+    // Ensure they paired correctly
+    expect(client.core.pairing.pairings.keys.length).to.eql(1);
+    expect(client.core.history.keys.length).to.eql(2);
     expect(peer.core.pairing.pairings.keys.length).to.eql(1);
     expect(peer.core.history.keys.length).to.eql(2);
+    expect(responses[0].topic === responses[1].topic).toBe(true);
   });
 
   it("handles incoming auth requests", async () => {
@@ -173,7 +177,7 @@ describe("AuthClient", () => {
 
     const { uri } = await client.request(defaultRequestParams);
 
-    await peer.core.pairing.pair({ uri });
+    await peer.core.pairing.pair({ uri: uri! });
 
     await waitForEvent(() => receivedAuthRequest);
 
@@ -208,7 +212,7 @@ describe("AuthClient", () => {
     expect(client.core.pairing.getPairings().length).to.eql(1);
     expect(client.core.pairing.getPairings()[0].active).to.eql(false);
 
-    await peer.core.pairing.pair({ uri });
+    await peer.core.pairing.pair({ uri: uri! });
 
     await waitForEvent(() => hasResponded);
 
@@ -248,7 +252,7 @@ describe("AuthClient", () => {
     expect(client.core.pairing.getPairings().length).to.eql(1);
     expect(client.core.pairing.getPairings()[0].active).to.eql(false);
 
-    await peer.core.pairing.pair({ uri });
+    await peer.core.pairing.pair({ uri: uri! });
 
     await waitForEvent(() => hasResponded);
 
@@ -274,7 +278,7 @@ describe("AuthClient", () => {
           ...defaultRequestParams,
           expiry,
         });
-        uri = response.uri;
+        uri = response.uri!;
         resolve();
       }),
     ]);
@@ -313,7 +317,7 @@ describe("AuthClient", () => {
 
       const { uri } = await client.request(defaultRequestParams);
 
-      await peer.core.pairing.pair({ uri });
+      await peer.core.pairing.pair({ uri: uri! });
 
       await waitForEvent(() => receivedAuthRequest);
 
@@ -335,7 +339,7 @@ describe("AuthClient", () => {
 
       const { uri } = await client.request(defaultRequestParams);
 
-      await peer.core.pairing.pair({ uri });
+      await peer.core.pairing.pair({ uri: uri! });
 
       await waitForEvent(() => receivedAuthRequest);
 
@@ -366,7 +370,7 @@ describe("AuthClient", () => {
 
       const { uri } = await client.request(defaultRequestParams);
 
-      await peer.core.pairing.pair({ uri });
+      await peer.core.pairing.pair({ uri: uri! });
 
       await waitForEvent(() => receivedAuthRequest);
 
@@ -395,7 +399,7 @@ describe("AuthClient", () => {
 
       const { uri } = await client.request(defaultRequestParams);
 
-      await peer.core.pairing.pair({ uri });
+      await peer.core.pairing.pair({ uri: uri! });
 
       await waitForEvent(() => receivedAuthRequest);
 
@@ -449,7 +453,7 @@ describe("AuthClient", () => {
     expect(client.core.pairing.getPairings().length).to.eql(1);
     expect(client.core.pairing.getPairings()[0].active).to.eql(false);
 
-    await peer.core.pairing.pair({ uri });
+    await peer.core.pairing.pair({ uri: uri! });
 
     await waitForEvent(() => hasResponded);
 
@@ -480,7 +484,7 @@ describe("AuthClient", () => {
 
     const { uri } = await client.request(defaultRequestParams);
 
-    await peer.core.pairing.pair({ uri });
+    await peer.core.pairing.pair({ uri: uri! });
 
     expect(client.core.pairing.pairings.keys).to.eql(peer.core.pairing.pairings.keys);
     expect(peer.core.pairing.pairings.keys.length).to.eql(1);

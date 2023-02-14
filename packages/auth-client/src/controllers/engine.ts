@@ -50,46 +50,16 @@ export class AuthEngine extends IAuthEngine {
       throw new Error("Invalid request");
     }
 
+    if (opts?.topic) {
+      return this.requestOnKnownPairing(opts.topic, params);
+    }
+
     // SPEC: A will construct an authentication request.
     const { chainId, statement, aud, domain, nonce, type } = params;
 
     const relay = { protocol: RELAYER_DEFAULT_PROTOCOL };
-
     const expiry = calcExpiry(params.expiry || FIVE_MINUTES);
     const publicKey = await this.client.core.crypto.generateKeyPair();
-
-    if (opts?.topic) {
-      const knownPairing = this.client.core.pairing.pairings
-        .getAll({ active: true })
-        .find((pairing) => pairing.topic === opts?.topic);
-
-      if (!knownPairing)
-        throw new Error(`Could not find pairing for provided topic ${opts?.topic}`);
-
-      // Send request to existing pairing
-      const id = await this.sendRequest(
-        knownPairing.topic,
-        "wc_authRequest",
-        {
-          payloadParams: {
-            type: type ?? "eip4361",
-            chainId,
-            statement,
-            aud,
-            domain,
-            version: "1",
-            nonce,
-            iat: new Date().toISOString(),
-          },
-          requester: { publicKey, metadata: this.client.metadata },
-        },
-        {},
-        params.expiry,
-      );
-
-      this.client.logger.debug("sent request to existing pairing");
-      return { id };
-    }
 
     const symKey = generateRandomBytes32();
 
@@ -99,7 +69,7 @@ export class AuthEngine extends IAuthEngine {
     const pairing = { topic: pairingTopic, expiry, relay, active: false };
     await this.client.core.pairing.pairings.set(pairingTopic, pairing);
 
-    this.client.logger.debug("Generated new pairing", pairing);
+    this.client.logger.info({ message: "Generated new pairing", pairing });
 
     this.setExpiry(pairingTopic, expiry);
 
@@ -114,7 +84,7 @@ export class AuthEngine extends IAuthEngine {
     // Subscribe to auth_response topic
     await this.client.core.relayer.subscribe(responseTopic);
 
-    this.client.logger.debug("sending request to potential pairing");
+    this.client.logger.info(`sending request to new pairing topic: ${pairingTopic}`);
 
     // SPEC: A encrypts reuqest with symKey S
     // SPEC: A publishes encrypted request to topic
@@ -138,7 +108,7 @@ export class AuthEngine extends IAuthEngine {
       params.expiry,
     );
 
-    this.client.logger.debug("sent request to potential pairing");
+    this.client.logger.info(`sent request to new pairing topic: ${pairingTopic}`);
 
     const uri = formatUri({
       protocol: this.client.protocol,
@@ -201,7 +171,7 @@ export class AuthEngine extends IAuthEngine {
   };
 
   public formatMessage = (cacao: AuthEngineTypes.CacaoPayload, iss: string) => {
-    this.client.logger.debug("formatMessage, cacao is:", cacao);
+    this.client.logger.debug(`formatMessage, cacao is: ${JSON.stringify(cacao)}`);
 
     const header = `${cacao.domain} wants you to sign in with your Ethereum account:`;
     const walletAddress = getDidAddress(iss);
@@ -235,7 +205,7 @@ export class AuthEngine extends IAuthEngine {
     return message;
   };
 
-  // ---------- Private Helpers --------------------------------------- //
+  // ---------- Protected/Private Helpers --------------------------------------- //
 
   protected setExpiry: IAuthEngine["setExpiry"] = async (topic, expiry) => {
     if (this.client.core.pairing.pairings.keys.includes(topic)) {
@@ -283,6 +253,41 @@ export class AuthEngine extends IAuthEngine {
     await this.client.core.history.resolve(payload);
 
     return payload.id;
+  };
+
+  private requestOnKnownPairing = async (topic: string, params: AuthEngineTypes.RequestParams) => {
+    const knownPairing = this.client.core.pairing.pairings
+      .getAll({ active: true })
+      .find((pairing) => pairing.topic === topic);
+
+    if (!knownPairing) throw new Error(`Could not find pairing for provided topic ${topic}`);
+
+    const { publicKey } = this.client.authKeys.get(AUTH_CLIENT_PUBLIC_KEY_NAME);
+    const { chainId, statement, aud, domain, nonce, type } = params;
+
+    // Send request to existing pairing
+    const id = await this.sendRequest(
+      knownPairing.topic,
+      "wc_authRequest",
+      {
+        payloadParams: {
+          type: type ?? "eip4361",
+          chainId,
+          statement,
+          aud,
+          domain,
+          version: "1",
+          nonce,
+          iat: new Date().toISOString(),
+        },
+        requester: { publicKey, metadata: this.client.metadata },
+      },
+      {},
+      params.expiry,
+    );
+
+    this.client.logger.info(`sent request to known pairing topic: ${knownPairing.topic}`);
+    return { id };
   };
 
   private isInitialized() {
@@ -353,7 +358,7 @@ export class AuthEngine extends IAuthEngine {
       payloadParams: { resources, statement, aud, domain, version, nonce, iat },
     } = payload.params;
 
-    this.client.logger.debug("onAuthRequest:", topic, payload);
+    this.client.logger.info({ type: "onAuthRequest", topic, payload });
 
     try {
       const cacaoPayload: AuthEngineTypes.CacaoRequestPayload = {
@@ -388,7 +393,7 @@ export class AuthEngine extends IAuthEngine {
 
   protected onAuthResponse: IAuthEngine["onAuthResponse"] = async (topic, response) => {
     const { id } = response;
-    this.client.logger.debug("onAuthResponse", topic, response);
+    this.client.logger.info({ type: "onAuthResponse", topic, response });
 
     if (isJsonRpcResult(response)) {
       const { pairingTopic } = this.client.pairingTopics.get(topic);
