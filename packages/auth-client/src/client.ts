@@ -14,6 +14,7 @@ import {
   AUTH_CLIENT_STORAGE_PREFIX,
   AUTH_CLIENT_VERSION,
   AUTH_CLIENT_DEFAULT_NAME,
+  AUTH_CLIENT_PUBLIC_KEY_NAME,
 } from "./constants";
 
 export class AuthClient extends IAuthClient {
@@ -55,7 +56,13 @@ export class AuthClient extends IAuthClient {
     this.projectId = opts.projectId;
     this.core = opts.core || new Core(opts);
     this.logger = generateChildLogger(logger, this.name);
-    this.authKeys = new Store(this.core, this.logger, "authKeys", AUTH_CLIENT_STORAGE_PREFIX);
+    this.authKeys = new Store(
+      this.core,
+      this.logger,
+      "authKeys",
+      AUTH_CLIENT_STORAGE_PREFIX,
+      () => AUTH_CLIENT_PUBLIC_KEY_NAME,
+    );
     this.pairingTopics = new Store(
       this.core,
       this.logger,
@@ -143,6 +150,7 @@ export class AuthClient extends IAuthClient {
       await this.pairingTopics.init();
       await this.engine.init();
       this.logger.info(`AuthClient Initialization Success`);
+      this.logger.info({ authClient: this });
     } catch (error: any) {
       this.logger.info(`AuthClient Initialization Failure`);
       this.logger.error(error.message);

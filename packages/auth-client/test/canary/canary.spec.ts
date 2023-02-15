@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { expect, describe, it, beforeEach, afterEach, beforeAll } from "vitest";
 import { Wallet } from "@ethersproject/wallet";
 import { AuthClient, generateNonce, IAuthClient, AuthEngineTypes } from "./../../src";
@@ -113,7 +114,7 @@ describe("AuthClient canary", () => {
         });
       }),
       new Promise<void>(async (resolve) => {
-        await peer.core.pairing.pair({ uri: request.uri, activatePairing: true });
+        await peer.core.pairing.pair({ uri: request.uri!, activatePairing: true });
         resolve();
       }),
     ]);
@@ -158,7 +159,7 @@ describe("AuthClient canary", () => {
         });
       }),
       new Promise<void>(async (resolve) => {
-        await peer.core.pairing.pair({ uri: request.uri });
+        await peer.core.pairing.pair({ uri: request.uri! });
         resolve();
       }),
     ]);
@@ -178,12 +179,10 @@ describe("AuthClient canary", () => {
         });
       }),
       new Promise<void>(async (resolve) => {
-        await peer.core.pairing.pair({ uri: request.uri });
+        await peer.core.pairing.pair({ uri: request.uri! });
         resolve();
       }),
     ]);
-
-    await peer.core.pairing.pair({ uri: request.uri });
 
     const requests = peer.getPendingRequests();
 
