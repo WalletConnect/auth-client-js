@@ -1,4 +1,4 @@
-import { RelayerTypes, CryptoTypes } from "@walletconnect/types";
+import { CryptoTypes, RelayerTypes } from "@walletconnect/types";
 
 import {
   ErrorResponse as CommonErrorResponse,
@@ -59,6 +59,7 @@ export declare namespace AuthEngineTypes {
     iat: string;
     nbf?: string;
     exp?: string;
+    chainId?: string;
     statement?: string;
     requestId?: string;
     resources?: string[];

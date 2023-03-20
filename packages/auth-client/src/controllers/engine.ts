@@ -1,21 +1,21 @@
 import { RELAYER_EVENTS } from "@walletconnect/core";
 import {
+  formatJsonRpcError,
   formatJsonRpcRequest,
   formatJsonRpcResult,
-  formatJsonRpcError,
+  isJsonRpcError,
   isJsonRpcRequest,
   isJsonRpcResponse,
   isJsonRpcResult,
-  isJsonRpcError,
 } from "@walletconnect/jsonrpc-utils";
 import { RelayerTypes } from "@walletconnect/types";
 import { getInternalError, hashKey, TYPE_1 } from "@walletconnect/utils";
-import { JsonRpcTypes, IAuthEngine, AuthEngineTypes } from "../types";
 import { AUTH_CLIENT_PUBLIC_KEY_NAME, ENGINE_RPC_OPTS } from "../constants";
+import { AuthEngineTypes, IAuthEngine, JsonRpcTypes } from "../types";
 import { getDidAddress, getDidChainId, getNamespacedDidChainId } from "../utils/address";
+import { verifySignature } from "../utils/signature";
 import { getPendingRequest, getPendingRequests } from "../utils/store";
 import { isValidRequest, isValidRespond } from "../utils/validators";
-import { verifySignature } from "../utils/signature";
 
 export class AuthEngine extends IAuthEngine {
   private initialized = false;
@@ -328,7 +328,7 @@ export class AuthEngine extends IAuthEngine {
   protected onAuthRequest: IAuthEngine["onAuthRequest"] = async (topic, payload) => {
     const {
       requester,
-      payloadParams: { resources, statement, aud, domain, version, nonce, iat },
+      payloadParams: { resources, statement, aud, domain, version, nonce, iat, chainId },
     } = payload.params;
 
     this.client.logger.info({ type: "onAuthRequest", topic, payload });
@@ -342,6 +342,7 @@ export class AuthEngine extends IAuthEngine {
         iat,
         statement,
         resources,
+        chainId,
       };
 
       await this.client.requests.set(payload.id, {
