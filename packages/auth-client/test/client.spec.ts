@@ -54,19 +54,21 @@ describe("AuthClient", () => {
   let wallet: Wallet;
   let iss: string;
 
+  const relayUrl = process.env.TEST_RELAY_URL || "wss://staging.relay.walletconnect.com";
+
   // Set up a wallet to use as the external signer.
   beforeAll(() => {
     wallet = Wallet.createRandom();
   });
 
   console.log("projectId: ", process.env.TEST_PROJECT_ID);
-  console.log("relayUrl: ", process.env.TEST_RELAY_URL);
+  console.log("relayUrl: ", relayUrl);
 
   beforeEach(async () => {
     client = await AuthClient.init({
       name: "testClient",
       logger: "error",
-      relayUrl: process.env.TEST_RELAY_URL || "wss://staging.relay.walletconnect.com",
+      relayUrl,
       projectId: process.env.TEST_PROJECT_ID!,
       storageOptions: {
         database: ":memory:",
@@ -77,7 +79,7 @@ describe("AuthClient", () => {
     peer = await AuthClient.init({
       name: "testPeer",
       logger: "error",
-      relayUrl: process.env.TEST_RELAY_URL || "wss://staging.relay.walletconnect.com",
+      relayUrl,
       projectId: process.env.TEST_PROJECT_ID!,
       storageOptions: {
         database: ":memory:",
@@ -423,7 +425,7 @@ describe("AuthClient", () => {
     let receivedMetadataName = "";
     client = await AuthClient.init({
       logger: "error",
-      relayUrl: process.env.TEST_RELAY_URL || "wss://staging.relay.walletconnect.com",
+      relayUrl,
       projectId: process.env.TEST_PROJECT_ID!,
       storageOptions: {
         database: ":memory:",
