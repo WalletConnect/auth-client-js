@@ -44,7 +44,7 @@ npm run npm-publish # will auto-trigger each pkg's prepare/prepublishOnly script
 #### Publishing Canaries
 
 To publish canary versions under the `canary` dist tag, follow the same steps as above, but set the version using 
-the last commit's short hash (e.g. from `git log --oneline | head -n1`):
+the last commit's short hash (`git log --oneline | head -n1`), e.g. if the current version is `2.2.2`:
 
 ```sh
 # ...
