@@ -24,6 +24,42 @@ npm install
 - The `vitest` test environment automatically pulls in the environment variables defined in `testEnv.json`
 - These can be manually overridden by prefixing the desired custom vars: `TEST_PROJECT_ID=... yarn test`
 
+## Publishing
+
+1. Bump the version for the specific package and create the equivalent tag, e.g. for a patch:
+
+```sh
+cd packages/auth-client
+npm version patch # will update package.json and package-lock.json
+git commit -m "chore(release): 2.x.x"
+git tag 2.x.x
+```
+
+2. Run the desired `npm-publish` script from the root directory:
+
+```sh
+npm run npm-publish # will auto-trigger each pkg's prepare/prepublishOnly scripts
+```
+
+#### Publishing Canaries
+
+To publish canary versions under the `canary` dist tag, follow the same steps as above, but set the version using 
+the last commit's short hash (e.g. from `git log --oneline | head -n1`):
+
+```sh
+# ...
+npm version 2.2.2-bb147cb
+# ...
+```
+
+Then from the root directory, run:
+
+```sh
+npm run npm-publish:canary # will auto-trigger each pkg's prepare/prepublishOnly scripts
+```
+
+
+
 ## License
 
 Apache 2.0
