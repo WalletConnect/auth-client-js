@@ -33,7 +33,7 @@
     "prepublishOnly": "npm run build"
   },
   "engines": {
-    "node": ">=16 <17"
+    "node": ">=16"
   },
   "dependencies": {
     "@ethersproject/hash": "^5.7.0",
