@@ -59,7 +59,7 @@ export class AuthEngine extends IAuthEngine {
     const publicKey = await this.client.core.crypto.generateKeyPair();
     const responseTopic = hashKey(publicKey);
 
-    this.client.authKeys.set(AUTH_CLIENT_PUBLIC_KEY_NAME, { publicKey });
+    await this.client.authKeys.set(AUTH_CLIENT_PUBLIC_KEY_NAME, { responseTopic, publicKey });
     await this.client.pairingTopics.set(responseTopic, { topic: responseTopic, pairingTopic });
 
     // Subscribe to auth_response topic
@@ -277,17 +277,24 @@ export class AuthEngine extends IAuthEngine {
       RELAYER_EVENTS.message,
       async (event: RelayerTypes.MessageEvent) => {
         const { topic, message } = event;
-        const receiverPublicKey = this.client.authKeys.keys.includes(AUTH_CLIENT_PUBLIC_KEY_NAME)
-          ? this.client.authKeys.get(AUTH_CLIENT_PUBLIC_KEY_NAME).publicKey
-          : "";
 
-        const opts = receiverPublicKey
-          ? {
-              receiverPublicKey,
-            }
-          : {};
+        // Retrieve the public key (if defined) to decrypt possible `auth_request` response
+        const { responseTopic, publicKey } = this.client.authKeys.keys.includes(
+          AUTH_CLIENT_PUBLIC_KEY_NAME,
+        )
+          ? this.client.authKeys.get(AUTH_CLIENT_PUBLIC_KEY_NAME)
+          : { responseTopic: undefined, publicKey: undefined };
 
-        const payload = await this.client.core.crypto.decode(topic, message, opts);
+        // If there's an expected responseTopic/publicKey, we only proceed if this message's topic matches,
+        // otherwise we're attempting to decrypt another client's TYPE_1 envelope with the wrong publicKey.
+        if (responseTopic && topic !== responseTopic) {
+          this.client.logger.debug("[Auth] Ignoring message from unknown topic", topic);
+          return;
+        }
+
+        const payload = await this.client.core.crypto.decode(topic, message, {
+          receiverPublicKey: publicKey,
+        });
         if (isJsonRpcRequest(payload)) {
           this.client.core.history.set(topic, payload);
           this.onRelayEventRequest({ topic, payload });

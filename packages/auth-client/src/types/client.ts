@@ -56,7 +56,7 @@ export abstract class IAuthClient {
   public abstract core: ICore;
   public abstract metadata: AuthClientTypes.Metadata;
   public abstract projectId: string;
-  public abstract authKeys: IStore<string, { publicKey: string }>;
+  public abstract authKeys: IStore<string, { responseTopic: string; publicKey: string }>;
   public abstract pairingTopics: IStore<string, any>;
   public abstract requests: IStore<
     number,
