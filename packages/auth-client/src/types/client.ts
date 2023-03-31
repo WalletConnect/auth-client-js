@@ -57,7 +57,7 @@ export abstract class IAuthClient {
   public abstract metadata: AuthClientTypes.Metadata;
   public abstract projectId: string;
   public abstract authKeys: IStore<string, { responseTopic: string; publicKey: string }>;
-  public abstract pairingTopics: IStore<string, any>;
+  public abstract pairingTopics: IStore<string, { topic: string; pairingTopic: string }>;
   public abstract requests: IStore<
     number,
     { id: number } & (AuthEngineTypes.Cacao | AuthEngineTypes.PendingRequest)
