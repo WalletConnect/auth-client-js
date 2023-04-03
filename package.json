@@ -1,7 +1,7 @@
 {
-  "name": "@walletconnect/auth-client",
-  "description": "WalletConnect Auth Client",
-  "version": "2.0.5",
+  "name": "walletconnect-auth-client-repo",
+  "description": "Repository for the WalletConnect JS AuthClient",
+  "version": "0.1.0",
   "private": true,
   "keywords": [
     "wallet",
