@@ -60,7 +60,7 @@ export abstract class IAuthClient {
   public abstract pairingTopics: IStore<string, { topic: string; pairingTopic: string }>;
   public abstract requests: IStore<
     number,
-    { id: number } & (AuthEngineTypes.Cacao | AuthEngineTypes.PendingRequest)
+    { id: number; topic: string } & (AuthEngineTypes.Cacao | AuthEngineTypes.PendingRequest)
   >;
 
   public abstract events: EventEmitter;
