@@ -326,7 +326,9 @@ describe("AuthClient", () => {
 
       const requests = peer.getPendingRequests();
 
-      expect(Object.values(requests)[0].topic).to.eql(peer.core.pairing.getPairings()[0].topic);
+      expect(Object.values(requests)[0].pairingTopic).to.eql(
+        peer.core.pairing.getPairings()[0].topic,
+      );
 
       expect(Object.values(requests).length).to.eql(1);
 

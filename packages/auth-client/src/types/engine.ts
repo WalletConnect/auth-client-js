@@ -85,7 +85,7 @@ export declare namespace AuthEngineTypes {
 
   interface PendingRequest {
     id: number;
-    topic: string;
+    pairingTopic: string;
     requester: {
       publicKey: string;
       metadata: AuthClientTypes.Metadata;
