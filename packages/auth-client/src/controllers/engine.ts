@@ -135,7 +135,7 @@ export class AuthEngine extends IAuthEngine {
       encodeOpts,
     );
 
-    await this.client.requests.set(id, { id, ...cacao });
+    await this.client.requests.update(id, { ...cacao });
   };
 
   public getPendingRequests: IAuthEngine["getPendingRequests"] = () => {
@@ -354,6 +354,7 @@ export class AuthEngine extends IAuthEngine {
 
       await this.client.requests.set(payload.id, {
         requester,
+        pairingTopic: topic,
         id: payload.id,
         cacaoPayload,
       });
@@ -381,7 +382,7 @@ export class AuthEngine extends IAuthEngine {
       await this.client.core.pairing.activate({ topic: pairingTopic });
 
       const { s: signature, p: payload } = response.result;
-      await this.client.requests.set(id, { id, ...response.result });
+      await this.client.requests.set(id, { id, pairingTopic, ...response.result });
       const reconstructed = this.formatMessage(payload, payload.iss);
       this.client.logger.debug("reconstructed message:\n", JSON.stringify(reconstructed));
       this.client.logger.debug("payload.iss:", payload.iss);
