@@ -359,7 +359,8 @@ export class AuthEngine extends IAuthEngine {
         id: payload.id,
         cacaoPayload,
       });
-      const hash = hashMessage(JSON.stringify(cacaoPayload));
+
+      const hash = hashMessage(JSON.stringify(payload));
       const context = await this.getVerifyContext(hash, this.client.metadata);
 
       this.client.emit("auth_request", {
