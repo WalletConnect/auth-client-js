@@ -8,7 +8,7 @@ import {
   isJsonRpcResponse,
   isJsonRpcResult,
 } from "@walletconnect/jsonrpc-utils";
-import { CoreTypes, RelayerTypes, Verify } from "@walletconnect/types";
+import { RelayerTypes, Verify } from "@walletconnect/types";
 import { getInternalError, hashKey, TYPE_1 } from "@walletconnect/utils";
 import { AUTH_CLIENT_PUBLIC_KEY_NAME, ENGINE_RPC_OPTS } from "../constants";
 import { AuthClientTypes, AuthEngineTypes, IAuthEngine, JsonRpcTypes } from "../types";
