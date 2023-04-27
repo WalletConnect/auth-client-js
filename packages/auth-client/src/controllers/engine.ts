@@ -369,8 +369,8 @@ export class AuthEngine extends IAuthEngine {
         params: {
           requester,
           cacaoPayload,
-          verifyContext,
         },
+        verifyContext,
       });
     } catch (err: any) {
       await this.sendError(payload.id, topic, err);
