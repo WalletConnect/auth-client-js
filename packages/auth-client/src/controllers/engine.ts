@@ -8,14 +8,15 @@ import {
   isJsonRpcResponse,
   isJsonRpcResult,
 } from "@walletconnect/jsonrpc-utils";
-import { RelayerTypes } from "@walletconnect/types";
+import { RelayerTypes, Verify } from "@walletconnect/types";
 import { getInternalError, hashKey, TYPE_1 } from "@walletconnect/utils";
 import { AUTH_CLIENT_PUBLIC_KEY_NAME, ENGINE_RPC_OPTS } from "../constants";
-import { AuthEngineTypes, IAuthEngine, JsonRpcTypes } from "../types";
+import { AuthClientTypes, AuthEngineTypes, IAuthEngine, JsonRpcTypes } from "../types";
 import { getDidAddress, getDidChainId, getNamespacedDidChainId } from "../utils/address";
 import { verifySignature } from "../utils/signature";
 import { getPendingRequest, getPendingRequests } from "../utils/store";
 import { isValidRequest, isValidRespond } from "../utils/validators";
+import { hashMessage } from "../utils/crypto";
 
 export class AuthEngine extends IAuthEngine {
   private initialized = false;
@@ -359,12 +360,16 @@ export class AuthEngine extends IAuthEngine {
         cacaoPayload,
       });
 
+      const hash = hashMessage(JSON.stringify(payload));
+      const verifyContext = await this.getVerifyContext(hash, this.client.metadata);
+
       this.client.emit("auth_request", {
         id: payload.id,
         topic,
         params: {
           requester,
           cacaoPayload,
+          verifyContext,
         },
       });
     } catch (err: any) {
@@ -419,5 +424,31 @@ export class AuthEngine extends IAuthEngine {
     } else if (isJsonRpcError(response)) {
       this.client.emit("auth_response", { id, topic, params: response });
     }
+  };
+
+  private getVerifyContext = async (hash: string, metadata: AuthClientTypes.Metadata) => {
+    const context: Verify.Context = {
+      verified: {
+        verifyUrl: metadata.verifyUrl || "",
+        validation: "UNKNOWN",
+        origin: metadata.url || "",
+      },
+    };
+
+    try {
+      const origin = await this.client.core.verify.resolve({
+        attestationId: hash,
+        verifyUrl: metadata.verifyUrl,
+      });
+      if (origin) {
+        context.verified.origin = origin;
+        context.verified.validation = origin === metadata.url ? "VALID" : "INVALID";
+      }
+    } catch (e) {
+      this.client.logger.error(e);
+    }
+
+    this.client.logger.info(`Verify context: ${JSON.stringify(context)}`);
+    return context;
   };
 }

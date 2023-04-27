@@ -143,6 +143,7 @@ describe("AuthClient", () => {
         },
         iss,
       );
+      expect(args.params.verifyContext.verified.validation).to.eql("UNKNOWN");
     });
 
     client.on("auth_response", (args) => {
@@ -201,6 +202,7 @@ describe("AuthClient", () => {
         },
         iss,
       );
+      expect(args.params.verifyContext.verified.validation).to.eql("UNKNOWN");
     });
 
     client.once("auth_response", ({ params }) => {
@@ -241,6 +243,7 @@ describe("AuthClient", () => {
         },
         iss,
       );
+      expect(args.params.verifyContext.verified.validation).to.eql("UNKNOWN");
     });
 
     client.once("auth_response", ({ params }) => {
@@ -453,6 +456,7 @@ describe("AuthClient", () => {
         iss,
       );
       hasResponded = true;
+      expect(args.params.verifyContext.verified.validation).to.eql("UNKNOWN");
     });
 
     const { uri } = await client.request(defaultRequestParams);

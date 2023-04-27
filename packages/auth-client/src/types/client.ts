@@ -1,4 +1,4 @@
-import { ICore, IStore, CoreTypes } from "@walletconnect/types";
+import { ICore, IStore, CoreTypes, Verify } from "@walletconnect/types";
 import EventEmitter from "events";
 import { AuthEngineTypes } from "./engine";
 
@@ -12,6 +12,7 @@ export declare namespace AuthClientTypes {
   interface AuthRequestEventArgs {
     requester: AuthEngineTypes.PendingRequest["requester"];
     cacaoPayload: AuthEngineTypes.CacaoRequestPayload;
+    verifyContext: Verify.Context;
   }
 
   type AuthResponseEventArgs =
@@ -45,6 +46,7 @@ export declare namespace AuthClientTypes {
       native?: string;
       universal?: string;
     };
+    verifyUrl?: string;
   }
 }
 
