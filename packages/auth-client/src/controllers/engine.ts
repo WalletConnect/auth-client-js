@@ -361,7 +361,7 @@ export class AuthEngine extends IAuthEngine {
       });
 
       const hash = hashMessage(JSON.stringify(payload));
-      const context = await this.getVerifyContext(hash, this.client.metadata);
+      const verifyContext = await this.getVerifyContext(hash, this.client.metadata);
 
       this.client.emit("auth_request", {
         id: payload.id,
@@ -369,7 +369,7 @@ export class AuthEngine extends IAuthEngine {
         params: {
           requester,
           cacaoPayload,
-          context,
+          verifyContext,
         },
       });
     } catch (err: any) {

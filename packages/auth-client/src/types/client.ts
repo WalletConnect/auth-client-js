@@ -12,7 +12,7 @@ export declare namespace AuthClientTypes {
   interface AuthRequestEventArgs {
     requester: AuthEngineTypes.PendingRequest["requester"];
     cacaoPayload: AuthEngineTypes.CacaoRequestPayload;
-    context: Verify.Context;
+    verifyContext: Verify.Context;
   }
 
   type AuthResponseEventArgs =
