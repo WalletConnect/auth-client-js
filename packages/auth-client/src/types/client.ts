@@ -12,7 +12,6 @@ export declare namespace AuthClientTypes {
   interface AuthRequestEventArgs {
     requester: AuthEngineTypes.PendingRequest["requester"];
     cacaoPayload: AuthEngineTypes.CacaoRequestPayload;
-    verifyContext: Verify.Context;
   }
 
   type AuthResponseEventArgs =
@@ -24,6 +23,7 @@ export declare namespace AuthClientTypes {
     id: number;
     topic: string;
     params: T;
+    verifyContext?: Verify.Context;
   }
 
   interface EventArguments {
