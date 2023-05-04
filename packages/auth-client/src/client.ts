@@ -149,6 +149,7 @@ export class AuthClient extends IAuthClient {
       await this.requests.init();
       await this.pairingTopics.init();
       await this.engine.init();
+      this.core.verify.init({ verifyUrl: this.metadata.verifyUrl });
       this.logger.info(`AuthClient Initialization Success`);
       this.logger.info({ authClient: this });
     } catch (error: any) {
