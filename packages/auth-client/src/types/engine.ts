@@ -1,4 +1,4 @@
-import { CryptoTypes, RelayerTypes } from "@walletconnect/types";
+import { CryptoTypes, RelayerTypes, Verify } from "@walletconnect/types";
 
 import {
   ErrorResponse as CommonErrorResponse,
@@ -91,6 +91,7 @@ export declare namespace AuthEngineTypes {
       metadata: AuthClientTypes.Metadata;
     };
     cacaoPayload: CacaoRequestPayload;
+    verifyContext: Verify.Context;
   }
 
   interface ResultResponse {

@@ -436,13 +436,14 @@ export class AuthEngine extends IAuthEngine {
     };
 
     try {
-      const origin = await this.client.core.verify.resolve({
+      const result = await this.client.core.verify.resolve({
         attestationId: hash,
         verifyUrl: metadata.verifyUrl,
       });
-      if (origin) {
-        context.verified.origin = origin;
-        context.verified.validation = origin === metadata.url ? "VALID" : "INVALID";
+      if (result) {
+        context.verified.origin = result.origin;
+        context.verified.isScam = result.isScam;
+        context.verified.validation = origin === new URL(metadata.url).origin ? "VALID" : "INVALID";
       }
     } catch (e) {
       this.client.logger.error(e);
