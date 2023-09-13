@@ -1,4 +1,4 @@
-import { RELAYER_EVENTS } from "@walletconnect/core";
+import { PAIRING_EVENTS, RELAYER_EVENTS } from "@walletconnect/core";
 import {
   formatJsonRpcError,
   formatJsonRpcRequest,
@@ -8,7 +8,7 @@ import {
   isJsonRpcResponse,
   isJsonRpcResult,
 } from "@walletconnect/jsonrpc-utils";
-import { RelayerTypes, Verify } from "@walletconnect/types";
+import { PairingTypes, RelayerTypes, Verify } from "@walletconnect/types";
 import { getInternalError, hashKey, TYPE_1 } from "@walletconnect/utils";
 import { AUTH_CLIENT_PUBLIC_KEY_NAME, ENGINE_RPC_OPTS } from "../constants";
 import { AuthClientTypes, AuthEngineTypes, IAuthEngine, JsonRpcTypes } from "../types";
@@ -29,6 +29,7 @@ export class AuthEngine extends IAuthEngine {
   public init: IAuthEngine["init"] = () => {
     if (!this.initialized) {
       this.registerRelayerEvents();
+      this.registerPairingEvents();
       this.client.core.pairing.register({ methods: Object.keys(ENGINE_RPC_OPTS) });
       this.initialized = true;
     }
@@ -48,7 +49,7 @@ export class AuthEngine extends IAuthEngine {
     }
 
     // SPEC: A will construct an authentication request.
-    const { chainId, statement, aud, domain, nonce, type } = params;
+    const { chainId, statement, aud, domain, nonce, type, exp, nbf } = params;
 
     const { topic: pairingTopic, uri } = await this.client.core.pairing.create();
 
@@ -83,6 +84,8 @@ export class AuthEngine extends IAuthEngine {
           version: "1",
           nonce,
           iat: new Date().toISOString(),
+          exp,
+          nbf,
         },
         requester: { publicKey, metadata: this.client.metadata },
       },
@@ -103,6 +106,9 @@ export class AuthEngine extends IAuthEngine {
     }
 
     const pendingRequest = getPendingRequest(this.client.requests, respondParams.id);
+    if (!pendingRequest) {
+      throw new Error(`Could not find pending auth request with id ${respondParams.id}`);
+    }
 
     const receiverPublicKey = pendingRequest.requester.publicKey;
     const senderPublicKey = await this.client.core.crypto.generateKeyPair();
@@ -129,14 +135,9 @@ export class AuthEngine extends IAuthEngine {
       s: respondParams.signature,
     };
 
-    const id = await this.sendResult<"wc_authRequest">(
-      pendingRequest.id,
-      responseTopic,
-      cacao,
-      encodeOpts,
-    );
-
-    await this.client.requests.update(id, { ...cacao });
+    await this.sendResult<"wc_authRequest">(pendingRequest.id, responseTopic, cacao, encodeOpts);
+    await this.client.core.pairing.activate({ topic: pendingRequest.pairingTopic });
+    await this.client.requests.update(pendingRequest.id, { ...cacao });
   };
 
   public getPendingRequests: IAuthEngine["getPendingRequests"] = () => {
@@ -155,6 +156,7 @@ export class AuthEngine extends IAuthEngine {
     const chainId = `Chain ID: ${getDidChainId(iss)}`;
     const nonce = `Nonce: ${cacao.nonce}`;
     const issuedAt = `Issued At: ${cacao.iat}`;
+    const expiry = cacao.exp ? `Expiry: ${cacao.exp}` : undefined;
     const resources =
       cacao.resources && cacao.resources.length > 0
         ? `Resources:\n${cacao.resources.map((resource) => `- ${resource}`).join("\n")}`
@@ -171,6 +173,7 @@ export class AuthEngine extends IAuthEngine {
       chainId,
       nonce,
       issuedAt,
+      expiry,
       resources,
     ]
       .filter((val) => val !== undefined && val !== null) // remove unnecessary empty lines
@@ -307,6 +310,23 @@ export class AuthEngine extends IAuthEngine {
     );
   }
 
+  // ---------- Pairing Events Router --------------------------------- //
+  private registerPairingEvents() {
+    this.client.core.pairing.events.on(PAIRING_EVENTS.create, (pairing: PairingTypes.Struct) =>
+      this.onPairingCreated(pairing),
+    );
+  }
+
+  private onPairingCreated = (pairing: PairingTypes.Struct) => {
+    const pendingRequests = this.getPendingRequests();
+    if (pendingRequests) {
+      const request = Object.values(pendingRequests).find(
+        (request) => request.pairingTopic === pairing.topic,
+      );
+      if (request) this.handleAuthRequest(request);
+    }
+  };
+
   protected onRelayEventRequest: IAuthEngine["onRelayEventRequest"] = (event) => {
     const { topic, payload } = event;
     const reqMethod = payload.method as JsonRpcTypes.WcMethod;
@@ -334,38 +354,27 @@ export class AuthEngine extends IAuthEngine {
   // ---------- Relay Event Handlers --------------------------------- //
 
   protected onAuthRequest: IAuthEngine["onAuthRequest"] = async (topic, payload) => {
-    const {
-      requester,
-      payloadParams: { resources, statement, aud, domain, version, nonce, iat, chainId },
-    } = payload.params;
-
+    const { requester, payloadParams } = payload.params;
     this.client.logger.info({ type: "onAuthRequest", topic, payload });
+    const hash = hashMessage(JSON.stringify(payload));
+    const verifyContext = await this.getVerifyContext(hash, this.client.metadata);
+    const pendingRequest = {
+      requester,
+      pairingTopic: topic,
+      id: payload.id,
+      cacaoPayload: payloadParams,
+      verifyContext,
+    };
+    await this.client.requests.set(payload.id, pendingRequest);
+    this.handleAuthRequest(pendingRequest);
+  };
 
+  private handleAuthRequest = async (request: AuthEngineTypes.PendingRequest) => {
+    const { id, pairingTopic, requester, cacaoPayload, verifyContext } = request;
     try {
-      const cacaoPayload: AuthEngineTypes.CacaoRequestPayload = {
-        aud,
-        domain,
-        version,
-        nonce,
-        iat,
-        statement,
-        resources,
-        chainId,
-      };
-
-      await this.client.requests.set(payload.id, {
-        requester,
-        pairingTopic: topic,
-        id: payload.id,
-        cacaoPayload,
-      });
-
-      const hash = hashMessage(JSON.stringify(payload));
-      const verifyContext = await this.getVerifyContext(hash, this.client.metadata);
-
       this.client.emit("auth_request", {
-        id: payload.id,
-        topic,
+        id,
+        topic: pairingTopic,
         params: {
           requester,
           cacaoPayload,
@@ -373,7 +382,7 @@ export class AuthEngine extends IAuthEngine {
         verifyContext,
       });
     } catch (err: any) {
-      await this.sendError(payload.id, topic, err);
+      await this.sendError(request.id, request.pairingTopic, err);
       this.client.logger.error(err);
     }
   };
