@@ -7,7 +7,7 @@ import {
 } from "@walletconnect/logger";
 import { EventEmitter } from "events";
 
-import { AuthClientTypes, IAuthClient } from "./types";
+import { AuthClientTypes, AuthEngineTypes, IAuthClient } from "./types";
 import { AuthEngine } from "./controllers";
 import {
   AUTH_CLIENT_PROTOCOL,
@@ -69,7 +69,13 @@ export class AuthClient extends IAuthClient {
       "pairingTopics",
       AUTH_CLIENT_STORAGE_PREFIX,
     );
-    this.requests = new Store(this.core, this.logger, "requests", AUTH_CLIENT_STORAGE_PREFIX);
+    this.requests = new Store(
+      this.core,
+      this.logger,
+      "requests",
+      AUTH_CLIENT_STORAGE_PREFIX,
+      (val: AuthEngineTypes.PendingRequest) => val.id,
+    );
     this.engine = new AuthEngine(this);
   }
 
