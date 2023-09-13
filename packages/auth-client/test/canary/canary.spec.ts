@@ -114,7 +114,7 @@ describe("AuthClient canary", () => {
         });
       }),
       new Promise<void>(async (resolve) => {
-        await peer.core.pairing.pair({ uri: request.uri!, activatePairing: true });
+        await peer.core.pairing.pair({ uri: request.uri! });
         resolve();
       }),
     ]);
