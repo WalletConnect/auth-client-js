@@ -112,7 +112,7 @@ describe("AuthClient", () => {
     });
     const { uri } = await client.request(defaultRequestParams);
 
-    await peer.core.pairing.pair({ uri: uri!, activatePairing: true });
+    await peer.core.pairing.pair({ uri: uri! });
     await waitForEvent(() => hasRequest);
 
     // Ensure they paired
@@ -124,7 +124,8 @@ describe("AuthClient", () => {
     expect(client.core.history.records.size).to.eql(1);
 
     // Ensure pairing is in expected state
-    expect(peer.core.pairing.pairings.values[0].active).to.eql(true);
+    // pairing should only activates on successful response i.e. auth approval
+    expect(peer.core.pairing.pairings.values[0].active).to.eql(false);
   });
 
   it("can use known pairings", async () => {
