@@ -9,7 +9,7 @@ import {
   isJsonRpcResult,
 } from "@walletconnect/jsonrpc-utils";
 import { PairingTypes, RelayerTypes, Verify } from "@walletconnect/types";
-import { getInternalError, hashKey, TYPE_1 } from "@walletconnect/utils";
+import { getInternalError, hashKey, isBrowser, TYPE_1 } from "@walletconnect/utils";
 import { AUTH_CLIENT_PUBLIC_KEY_NAME, ENGINE_RPC_OPTS } from "../constants";
 import { AuthClientTypes, AuthEngineTypes, IAuthEngine, JsonRpcTypes } from "../types";
 import { getDidAddress, getDidChainId, getNamespacedDidChainId } from "../utils/address";
@@ -203,8 +203,16 @@ export class AuthEngine extends IAuthEngine {
     const rpcOpts = ENGINE_RPC_OPTS[method].req;
     if (expiry) rpcOpts.ttl = expiry;
     this.client.core.history.set(topic, payload);
-    await this.client.core.relayer.publish(topic, message, rpcOpts);
-
+    if (isBrowser()) {
+      const hash = hashMessage(JSON.stringify(payload));
+      this.client.core.verify.register({ attestationId: hash });
+    }
+    await this.client.core.relayer.publish(topic, message, {
+      ...rpcOpts,
+      internal: {
+        throwOnFailedPublish: true,
+      },
+    });
     return payload.id;
   };
 
@@ -214,9 +222,13 @@ export class AuthEngine extends IAuthEngine {
     const record = await this.client.core.history.get(topic, id);
     const rpcOpts = ENGINE_RPC_OPTS[record.request.method].res;
 
-    await this.client.core.relayer.publish(topic, message, rpcOpts);
+    await this.client.core.relayer.publish(topic, message, {
+      ...rpcOpts,
+      internal: {
+        throwOnFailedPublish: true,
+      },
+    });
     await this.client.core.history.resolve(payload);
-
     return payload.id;
   };
 
