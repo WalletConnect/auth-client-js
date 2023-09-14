@@ -3,6 +3,8 @@ import { ICore } from "@walletconnect/types";
 import EventEmitter from "events";
 
 export async function disconnectSocket(core: ICore) {
+  // wait a bit for all ACK requests to be processed
+  await new Promise<void>((resolve) => setTimeout(resolve, 1000));
   if (core.relayer.connected) {
     core.relayer.provider.events = new EventEmitter();
     core.relayer.core.heartbeat.events = new EventEmitter();
