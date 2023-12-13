@@ -105,7 +105,7 @@ export class AuthClient extends IAuthClient {
     return this.events.removeListener(name, listener);
   };
 
-  // ---------- Engine ----------------------------------------------- //
+  // ---------- Engine ---------------------------------- ------------ //
 
   // request wallet authentication
   public request: IAuthClient["request"] = async (params, opts) => {
@@ -145,10 +145,10 @@ export class AuthClient extends IAuthClient {
     }
   };
 
-  // ---------- Private ----------------------------------------------- //
+  // ---------- Private ---------------------------------------------- //
 
   private async initialize() {
-    this.logger.trace(`Initialized`);
+    this.logger.trace(`Initializing`);
     try {
       await this.core.start();
       await this.authKeys.init();
